@@ -1,0 +1,256 @@
+r0 = zero
+r1  - r30: whatever
+(potentially: r1: sp, r2-r9: args, r10-r16: tmp, r17-r30: saved)
+r31 = lr
+
+flags: bit0:eq bit1:lt
+
+     bit16: usermode
+
+valid conditions
+00 - gt
+01 - eq
+10 - lt 
+
+31      23      15      7      
+|-------|-------|-------|-------
+
+jmp form:
+31      23      15      7      
+|-------|-------|-------|-00----
+|imm                        |opc  
+
+jmp_dst = $+simm*4
+
+8 - bgt
+9 - ble
+a - beq
+b - bne
+c - blt
+d - bge
+e - jp
+f - jl
+
+rri form:
+31      23      15      7
+|-------|-------|-------|-------
+|imm            |ra  |rd  |opc  
+
+op2 = imm
+
+10 - addi
+11 - andi
+12 - ori
+13 - xori
+
+op2 = ~imm (-imm for sub)
+
+14 = subi
+15 - andni
+16 - orni
+17 - xorni
+
+op2 = imm<<16
+
+18 - addhi
+19 - andhi
+1a - orhi
+1b - xorhi
+
+op2 = ~(imm<<16)
+
+1d - andnhi
+1e - ornhi
+1f - xornhi
+
+addr = (ra) + simm*sz (sz=1,2,4)
+
+20 - ldb
+21 - ldbs
+22 - stb
+
+24 - ldh
+25 - ldhs
+26 - sth
+
+28 - ldw
+2a - stw
+
+2d - ldm    (rd)..(r31) = *addr
+2f - stm    *addr = (rd)..(r31)
+
+
+io only accessible in kernel mode
+io is 16 bit address, each port 32 bits
+30 - rio
+31 - wio
+
+34 - adr    (rd) = $+simm*4
+
+ri form:
+31      23      15      7
+|-------|-------|-------|-111000
+|imm            |ra  |opc
+
+eq,lt set accordingly for signed/unsigned
+cmn compares with -imm
+tst equiv to scmpi (rd&imm), 0
+
+00 - scmni
+01 - ucmni
+02 - tsti
+
+04 - scmpi
+05 - ucmpi
+06 - tstni
+
+0a - tsthi
+
+0c - scmphi
+0d - ucmphi
+0e - tstnhi
+
+10 - jpr    pc = (rd)+simm (ret when rd=31 and imm=0)
+11 - jlr    pc = (rd)+simm, lr = $+4
+
+rrr form:
+31      23      15      7
+|-------|-------|-------|-111110
+|opc       |rb  |ra  |rd
+
+000 - add
+001 - and
+002 - or
+003 - xor
+004 - sub
+005 - andn
+006 - orn
+007 - xorn
+
+010 - srl
+011 - sll
+012 - sra
+014 - ror
+015 - rol
+
+022 - tst
+024 - scmp
+025 - ucmp
+026 - tstn
+
+030 - selgt
+031 - selle
+032 - seleq
+033 - selne
+034 - sellt
+035 - selge
+
+038 - sincgt
+039 - sincle
+03a - sinceq
+03b - sincne
+03c - sinclt
+03d - sincge
+
+for below, if opc[4] set then rb is scaled by 1,2,4,4
+
+400 - ldbx
+401 - ldbsx
+402 - stbx
+
+404 - ldhx
+405 - ldhsx
+406 - sthx
+
+408 - ldwx
+40a - stwx
+
+413 - addx (rd) = (ra)+(rb)*sz (sz as above)
+
+
+rrii form:
+31      23      15      7
+--------|-------|-------|-111001
+|opc  |imm2|imm1|ra  |rd  
+
+00 - rormi (rd) = ror((ra),imm1)[~imm2:0]
+04 - rolmi (rd) = rol((ra)[~imm2:0],imm1)
+08 - rorsmi (rd) = sx32(ror((ra),imm1)[~imm2:0])
+
+ubfe rd, ra, lo, sz := rormi rd, ra, lo, 32-sz
+sbfe := ... but with rorsmi
+bfm rd, ra, lo, sz := rolmi rd, ra, lo, 32-sz
+
+uxb rd, ra := rormi rd, ra, 0, 24
+uxh rd, ra := rormi rd, ra, 0, 16
+sxb rd, ra := rorsmi rd, ra, 0, 24
+sxh rd, ra := rorsmi rd, ra, 0, 16
+
+srli rd, ra, i := rormi rd, ra, i, i
+slli rd, ra, i := rolmi rd, ra, i, i
+srai rd. ra. i := rorsmi rd, ra, i, i
+
+rori rd, ra, i := rormi rd, ra, i, 0
+roli rd, ra, i := rolmi rd, ra, i, 0
+
+
+rrrr form:
+31      23      15      7
+--------|-------|-------|-111002
+|opc  |rc  |rb  |ra  |rd  
+
+20 - mla    (rd) = (rc)+(ra)*(rb) (mul when rc=r0)
+21 - mls    (rd) = (rc)-(ra)*(rb)
+22 - smul  (rc:rd) = sx64(ra)*sx64(rb) (mul when rc=r0) -- (not sure if this or mla should be default mul)
+23 - umul  ... but ux64
+24 - sdiv   (rd),(rc) = (ra)/(rb),(ra)%(rb)
+25 - udiv   ... but unsigned
+
+special form:
+31      23      15      7
+--------|-------|-------|-11110
+|opc        |arg      |rd
+
+000 - scall
+001 - sret
+
+004 - mfsr
+005 - mtsr
+
+exceptions:
+reset vector is ff000000
+system call - ff000004
+     exnarg from arg parameter of scall instr
+undefined - ...08
+     exnarg is the instruction
+mem - 0c
+     exnarg is faulting address
+div0 - 10 (is this necessary)
+irq - 14
+
+on exception:
+     save pc in slr
+     save flags in sflags
+     switch to kernel mode
+     jump to exn vector
+
+     for scall, und, div0 - return to instr after faulting instr
+     else - return to same instr
+
+on return from exception (sret):
+     restore flags from sflags and pc from slr
+
+special registers (uhh, >= 100 is kernel mode only):
+000 - flags
+001 - cpuinfo ???
+
+101 - slr (system link register)
+102 - sflags (saved flags)
+103 - exnarg (depends on exception type)
+------ under this is whatever idk (above is actually necessary)
+004 - memctrl
+     bit0: enable protection
+     bit(16+2*i): enable region i for kernel
+     bit(16+2*i+1): enable region i for user
+005+i - bit[15:0]: region i size >> 16
+     bit[31:16]: region i start >> 16
