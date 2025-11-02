@@ -1,11 +1,5 @@
 package decoder_pkg;
 
-    typedef enum {
-        OP2_REG   = 0,
-        OP2_IMM16,
-        OP2_IMM26
-    } op2_e;
-
     typedef struct {
         logic [4:0] rd;
         logic w_rd;
@@ -25,11 +19,12 @@ package decoder_pkg;
         logic [5:0] alu_opc;
         logic [2:0] cond_code;
 
-        logic op1_pc;
+        logic op2_imm;
 
-        op2_e op2_type;
-        logic [31:0] imm16;
-        logic [31:0] imm26;
+        logic [31:0] imm;
+        logic [31:0] branch_off;
+
+        logic branch_op1;
 
         logic undefined;
     } decoded_t;

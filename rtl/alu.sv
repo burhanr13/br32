@@ -1,5 +1,3 @@
-import alu_pkg::*;
-
 module alu (
     input [5:0] opc,
     input imm,
@@ -8,6 +6,7 @@ module alu (
     output logic [31:0] res,
     output logic [1:0] flags_res
 );
+    import alu_pkg::*;
 
     wire [31:0] op2 = op2_i ^ {32{opc[2]}};
     wire [4:0] shamt = op2_i[4:0];
@@ -65,26 +64,4 @@ module alu (
 
 endmodule
 
-module shifter (
-    input [31:0] op,
-    input [4:0] sh_i,
-    input [4:0] maskbits,
-    input left,
-    input sx,
-    output logic [31:0] out
-);
 
-    wire [31:0] ones = '1;
-    wire [31:0] mask = ones >> maskbits;
-    wire [ 4:0] sh = left ? -sh_i : sh_i;
-
-    always_comb begin
-        out = op;
-        if (left) out &= mask;
-        out = out >> sh | out << -sh;
-        if (!left) begin
-            out &= mask;
-            if (sx && out[~maskbits]) out |= ~mask;
-        end
-    end
-endmodule

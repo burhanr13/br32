@@ -1,6 +1,8 @@
 r0 = zero
-r1  - r30: whatever
-(potentially: r1: sp, r2-r9: args, r10-r16: tmp, r17-r30: saved)
+r1 = sp
+r2-r9 = a0-a7
+r10-r16 = t0-t6
+r17-r30 = s0-s13
 r31 = lr
 
 flags: bit0:eq bit1:lt
@@ -110,8 +112,9 @@ tst equiv to scmpi (rd&imm), 0
 0d - ucmphi
 0e - tstnhi
 
-10 - jpr    pc = (rd)+simm (ret when rd=31 and imm=0)
-11 - jlr    pc = (rd)+simm, lr = $+4
+imm must be 0
+10 - jpr    pc = (rd) (ret when rd=31)
+11 - jlr    pc = (rd), lr = $+4
 
 rrr form:
 31      23      15      7

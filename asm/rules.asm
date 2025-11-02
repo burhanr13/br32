@@ -1,9 +1,11 @@
 #subruledef reg {
-    rz => 0`5
-    r{ri: u5} => {
-        assert(ri != 0, "access zero register with rz")
-        ri
-    }
+    zr => 0`5
+    sp => 1`5
+    a{ai: u5} => {assert(ai < 8), (2+ai)`5}
+    t{ti: u5} => {assert(ti < 7), (10+ti)`5}
+    s{si: u5} => {assert(si < 14), (17+si)`5}
+    lr => 31`5
+    r{ri: u5} => {assert(ri != 0, "access zero register with zr"), ri}
 }
 
 #subruledef logic_imm {
@@ -72,7 +74,7 @@
     }
 }
 
-#subruledef jmp_op {
+#subruledef br_imm {
     bgt => 0x8
     ble => 0x9
     beq => 0xa
@@ -81,6 +83,11 @@
     bge => 0xd
     jp => 0xe
     jl => 0xf
+}
+
+#subruledef br_reg {
+    jpr => 0x10
+    jlr => 0x11
 }
 
 #subruledef jmpdst {
@@ -116,7 +123,7 @@
 }
 
 #ruledef rules {
-    {op:jmp_op} {i:jmpdst} => le(i @ 0b00 @ op`4)
+    {op:br_imm} {i:jmpdst} => le(i @ 0b00 @ op`4)
 
     addi {rd:reg}, {ra:reg}, {i:imm16} => le(i @ ra @ rd @ 0x10`6)
     addi {rd:reg}, {ra:reg}, {i:imm16m} => le(i @ ra @ rd @ 0x14`6)
@@ -128,12 +135,12 @@
     subi {rd:reg}, {ra:reg}, {i} => asm {addi {rd}, {ra}, -{i}}
     andni {rd:reg}, {ra:reg}, {i} => asm {andi {rd}, {ra}, !{i}}
     
-    movi {rd:reg}, {i:imm16} => asm {ori {rd}, rz, {i}}
-    movi {rd:reg}, {i:imm16n} => asm {ori {rd}, rz, {i}}
-    movi {rd:reg}, {i:imm16h} => asm {ori {rd}, rz, {i}}
-    movi {rd:reg}, {i:imm16hn} => asm {ori {rd}, rz, {i}}
+    movi {rd:reg}, {i:imm16} => asm {ori {rd}, zr, {i}}
+    movi {rd:reg}, {i:imm16n} => asm {ori {rd}, zr, {i}}
+    movi {rd:reg}, {i:imm16h} => asm {ori {rd}, zr, {i}}
+    movi {rd:reg}, {i:imm16hn} => asm {ori {rd}, zr, {i}}
     movi {rd:reg}, {i} => asm {
-        ori {rd}, rz, {i}[31:16] << 16
+        ori {rd}, zr, {i}[31:16] << 16
         ori {rd}, {rd}, {i}[15:0]
     }
 
@@ -144,6 +151,9 @@
     tsti {ra:reg}, {i:imm16n} => le(i @ ra @ 0x6`5 @ 0b111000)
     tsti {ra:reg}, {i:imm16h} => le(i @ ra @ 0xa`5 @ 0b111000)
     tsti {ra:reg}, {i:imm16hn} => le(i @ ra @ 0xe`5 @ 0b111000)
+
+    {op:br_reg} {ra:reg} => le(0`16 @ ra @ op`5 @ 0b111000)
+    ret => asm {jpr lr}
 
     {op:rotm_imm} {rd:reg}, {ra:reg}, {i1:u5}, {i2:u5} => le(op`6 @ i2 @ i1 @ ra @ rd @ 0b111001)
     ubfe {rd:reg}, {ra:reg}, {lo}, {sz} => {assert(lo+sz <= 32, "invalid bitfield"), asm {rormi {rd}, {ra}, {lo}, 32-{sz}}}
@@ -161,24 +171,9 @@
 
     {op:alu_reg} {rd:reg}, {ra:reg}, {rb:reg} => le(op`11 @ rb @ ra @ rd @ 0b111110)
     {op:cmp_reg} {ra:reg}, {rb:reg} => le(op`11 @ rb @ ra @ 0`5 @ 0b111110)
-    mov {rd:reg}, {rb:reg} => asm {or {rd}, rz, {rb}}
-    not {rd:reg}, {rb:reg} => asm {orn {rd}, rz, {rb}}
-    neg {rd:reg}, {rb:reg} => asm {sub {rd}, rz, {rb}}
-    nop => asm {mov rz, rz}
+    mov {rd:reg}, {rb:reg} => asm {or {rd}, zr, {rb}}
+    not {rd:reg}, {rb:reg} => asm {orn {rd}, zr, {rb}}
+    neg {rd:reg}, {rb:reg} => asm {sub {rd}, zr, {rb}}
+    nop => asm {mov zr, zr}
 }
-
-test:
-movi r1, 0
-movi r2, 0
-.loop:
-add r1, r1, r2
-addi r2, r2, 1
-ucmpi r2, 10
-blt .loop
-nop
-nop
-nop
-
-.spin:
-jp .spin
 
