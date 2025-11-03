@@ -133,10 +133,12 @@
 
 #subruledef cond_code {
     gt => 0
+    ng => 1
     le => 1
     eq => 2
     ne => 3
     lt => 4
+    nl => 5
     ge => 5
 }
 
@@ -173,21 +175,21 @@
     {op:logic_imm} {rd:reg}, {ra:reg}, {i:imm16n} => le(i @ ra @ rd @ (op | 0x4)`6)
     {op:logic_imm} {rd:reg}, {ra:reg}, {i:imm16h} => le(i @ ra @ rd @ (op | 0x8)`6)
     {op:logic_imm} {rd:reg}, {ra:reg}, {i:imm16hn} => le(i @ ra @ rd @ (op | 0xc)`6)
-    subi {rd:reg}, {ra:reg}, {i} => asm {addi {rd}, {ra}, -{i}}
-    andni {rd:reg}, {ra:reg}, {i} => asm {andi {rd}, {ra}, !{i}}
+    subi {rd:reg}, {ra:reg}, {i} => asm {addi {rd}, {ra}, -({i})}
+    andni {rd:reg}, {ra:reg}, {i} => asm {andi {rd}, {ra}, !({i})}
     
     movi {rd:reg}, {i:imm16} => asm {ori {rd}, zr, {i}}
     movi {rd:reg}, {i:imm16n} => asm {ori {rd}, zr, {i}}
     movi {rd:reg}, {i:imm16h} => asm {ori {rd}, zr, {i}}
     movi {rd:reg}, {i:imm16hn} => asm {ori {rd}, zr, {i}}
     movi {rd:reg}, {i} => asm {
-        ori {rd}, zr, {i}[31:16] << 16
-        ori {rd}, {rd}, {i}[15:0]
+        ori {rd}, zr, ({i})[31:16] << 16
+        ori {rd}, {rd}, ({i})[15:0]
     }
 
     {op:cmp_imm} {ra:reg}, {i:imm16} => le(i @ ra @ op`5 @ 0x38`6)
     {op:cmp_imm} {ra:reg}, {i:imm16m} => le(i @ ra @ (op ^ 0x4)`5 @ 0x38`6)
-    {op:cmp_imm} {ra:reg}, {i:imm16hm} => le(i @ ra @ (op | 0x8)`5 @ 0x38`6)
+    {op:cmp_imm} {ra:reg}, {i:imm16hm} => le(-i`16 @ ra @ (op | 0x8)`5 @ 0x38`6)
     tsti {ra:reg}, {i:imm16} => le(i @ ra @ 0x2`5 @ 0x38`6)
     tsti {ra:reg}, {i:imm16n} => le(i @ ra @ 0x6`5 @ 0x38`6)
     tsti {ra:reg}, {i:imm16h} => le(i @ ra @ 0xa`5 @ 0x38`6)
@@ -242,3 +244,5 @@
     ds {s} => s @ 0x00
 }
 
+
+ucmpi t0, 0xffffff88

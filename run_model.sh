@@ -2,12 +2,15 @@
 
 make -C rtl || exit 1
 
-if [[ ${1#*.} == asm ]]; then
-    customasm $1 || exit 1
-    filename=${1%.*}.bin
-else
-    filename=$1
-fi
+args=
 
+for a in $@; do
+    if [[ ${a#*.} == asm ]]; then
+        customasm $a || exit 1
+        args+=" ${a%.*}.bin"
+    else
+        args+=" $a"
+    fi
+done
 
-./rtl/obj_dir/Vcore $filename
+./rtl/obj_dir/Vcore $args

@@ -51,10 +51,6 @@ package pipeline_pkg;
         logic [4:0] rd;
         logic w_rd;
 
-        logic mem_r;
-        logic [1:0] mem_sz;
-        logic mem_sx;
-
         logic bubble;
     } mem_out_t;
 

@@ -5,8 +5,8 @@
 #include "Vcore.h"
 #include "Vcore___024root.h"
 
-bool debug = false;
-bool trace = false;
+bool bus_trace = false;
+bool cpu_trace = false;
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -19,6 +19,7 @@ Vcore model;
 long cycles = 0;
 
 bool done = false;
+u32 exit_code;
 
 enum class IoPort { HALT = 0x0000, COUT = 0x0001, CLK = 0x0002 };
 
@@ -34,6 +35,7 @@ u32 rio(u16 port) {
 void wio(u16 port, u32 data) {
     switch (static_cast<IoPort>(port)) {
         case IoPort::HALT:
+            exit_code = data;
             done = true;
             break;
         case IoPort::COUT:
@@ -78,15 +80,20 @@ void dump() {
     const char* flag_names[4] = {"GT", "EQ", "LT", "??"};
     printf("flags=%s\n", flag_names[model.rootp->core__DOT__EX__DOT__flags]);
 
-    printf("IF=%s\n", VL_TO_STRING(model.rootp->core__DOT__if_out).c_str());
-    printf("ID=%s\n", VL_TO_STRING(model.rootp->core__DOT__id_out).c_str());
-    printf("EX=%s\n", VL_TO_STRING(model.rootp->core__DOT__ex_out).c_str());
-    printf("MEM=%s\n", VL_TO_STRING(model.rootp->core__DOT__mem_out).c_str());
-    printf("WB=%s\n", VL_TO_STRING(model.rootp->core__DOT__wb_out).c_str());
+    // printf("\tIF=%s\n",
+    // VL_TO_STRING(model.rootp->core__DOT__if_out).c_str());
+    // printf("\tID=%s\n",
+    // VL_TO_STRING(model.rootp->core__DOT__id_out).c_str());
+    // printf("\tEX=%s\n",
+    // VL_TO_STRING(model.rootp->core__DOT__ex_out).c_str());
+    // printf("\tMEM=%s\n",
+    // VL_TO_STRING(model.rootp->core__DOT__mem_out).c_str());
+    // printf("\tWB=%s\n",
+    // VL_TO_STRING(model.rootp->core__DOT__wb_out).c_str());
 }
 
 void step() {
-    if (debug) printf("cycle: %ld\n", cycles);
+    if (bus_trace || cpu_trace) printf("cycle: %ld\n", cycles);
 
     model.clk = 1;
     model.eval();
@@ -94,7 +101,7 @@ void step() {
     model.clk = 0;
 
     model.idata = *(u32*) &mem[model.iaddr];
-    if (debug) printf("\tfetch [%x]=%08x\n", model.iaddr, model.idata);
+    if (bus_trace) printf("\tfetch [%x]=%08x\n", model.iaddr, model.idata);
     if (model.mem_r) {
         switch (model.mem_sz) {
             case 0:
@@ -107,7 +114,7 @@ void step() {
                 model.mem_data = *(u32*) &mem[model.mem_addr];
                 break;
         }
-        if (debug)
+        if (bus_trace)
             printf("\tmem read %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
                    model.mem_data);
     } else if (model.mem_w) {
@@ -122,33 +129,48 @@ void step() {
                 *(u32*) &mem[model.mem_addr] = model.mem_data;
                 break;
         }
-        if (debug)
+        if (bus_trace)
             printf("\tmem write %d [%x]=%x\n", 8 << model.mem_sz,
                    model.mem_addr, model.mem_data);
     }
     if (model.io_r) {
         model.io_data = rio(model.io_addr);
-        if (debug) printf("\tio read [%x]=%x\n", model.io_addr, model.io_data);
+        if (bus_trace)
+            printf("\tio read [%x]=%x\n", model.io_addr, model.io_data);
     } else if (model.io_w) {
         wio(model.io_addr, model.io_data);
-        if (debug) printf("\tio write [%x]=%x\n", model.io_addr, model.io_data);
+        if (bus_trace)
+            printf("\tio write [%x]=%x\n", model.io_addr, model.io_data);
     }
 
     model.eval();
 
-    if (trace) dump();
+    if (cpu_trace) dump();
 
     cycles++;
 }
 
 int main(int argc, char** argv) {
 
-    if (argc == 2) {
-        FILE* fp = fopen(argv[1], "rb");
-        if (fp) {
-            fread(mem, 1, sizeof(mem), fp);
-            fclose(fp);
+    argc--;
+    argv++;
+    while (argc > 0) {
+        if (!strcmp(*argv, "-d")) {
+            cpu_trace = true;
+        } else if (!strcmp(*argv, "-b")) {
+            bus_trace = true;
+        } else {
+            FILE* fp = fopen(*argv, "rb");
+            if (fp) {
+                fread(mem, 1, sizeof(mem), fp);
+                fclose(fp);
+            } else {
+                perror("fopen");
+                return 1;
+            }
         }
+        argc--;
+        argv++;
     }
 
     model.rst = 1;
@@ -157,4 +179,6 @@ int main(int argc, char** argv) {
     while (!done) {
         step();
     }
+
+    return exit_code;
 }

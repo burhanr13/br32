@@ -71,7 +71,7 @@ module decoder (
                             out.branch = 1;
                             out.branch_op1 = 1;
                             out.r_rs1 = 1;
-                            out.link = opc[1];
+                            out.link = opc[0];
                         end else begin
                             out.alu_opc = {3'b100, opc[2:0]};
                             high_imm = opc[3];

@@ -47,15 +47,17 @@ module stage_mem (
         if (io_w) io_data = op3;
 
         if (link) out.res = nextpc;
-        else if (mem_r) out.res = mem_data;
-        else if (io_r) out.res = io_data;
+        else if (mem_r) begin
+            case (mem_sz)
+                0: out.res = {{24{mem_sx && mem_data[7]}}, mem_data[7:0]};
+                1: out.res = {{16{mem_sx && mem_data[15]}}, mem_data[15:0]};
+                default: out.res = mem_data;
+            endcase
+        end else if (io_r) out.res = io_data;
         else out.res = alu_res;
 
         out.rd = rd;
         out.w_rd = w_rd && !bubble;
-        out.mem_r = mem_r;
-        out.mem_sz = mem_sz;
-        out.mem_sx = mem_sx;
 
         out.bubble = bubble;
     end

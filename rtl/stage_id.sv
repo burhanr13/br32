@@ -31,7 +31,7 @@ module stage_id (
 
         if (dec.op1_pc) out.op1 = pc;
         else if (EX.w_rd && dec.rs1 == EX.rd) begin
-            if (EX.mem_r && dec.r_rs1) begin
+            if ((EX.mem_r || EX.io_r) && dec.r_rs1) begin
                 stall = 1;
                 out.op1   = 0;
             end else out.op1 = EX.alu_res;
@@ -41,7 +41,7 @@ module stage_id (
 
         if (dec.op2_imm) out.op2 = dec.imm;
         else if (EX.w_rd && dec.rs2 == EX.rd) begin
-            if (EX.mem_r && dec.r_rs2) begin
+            if ((EX.mem_r || EX.io_r) && dec.r_rs2) begin
                 stall = 1;
                 out.op2   = 0;
             end else out.op2 = EX.alu_res;

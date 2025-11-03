@@ -8,7 +8,7 @@
 start:
     movi sp, 0x10000
     jl main
-    mtio zr, HALT
+    mtio a0, HALT
 
 divmod:
     ; a0 : dividend
@@ -195,9 +195,29 @@ printf:
     ldw lr, -32(sp)
     ret
     
+timed:
+    stw lr, -4(sp)
+    stw s0, -8(sp)
+    subi sp, sp, 8
 
+    mov t0, a0
+    mov a0, a1
+    mov a1, a2
+    mov a2, a3
+    mov a3, a4
+    mov a4, a5
+    mov a5, a6
+    mov a6, a7
 
+    mfio s0, CLK
+    jlr t0
+    mfio a1, CLK
+    sub a1, a1, s0
+    subi a1, a1, 3
 
-
+    addi sp, sp, 8
+    ldw s0, -8(sp)
+    ldw lr, -4(sp)
+    ret
 
 
