@@ -1,6 +1,7 @@
 module alu (
     input [5:0] opc,
     input imm,
+    input cond_true,
     input [31:0] op1,
     input [31:0] op2_i,
     output logic [31:0] res,
@@ -40,8 +41,10 @@ module alu (
                 default: res = 0;
             endcase
             1: res = shift_res;
-            2: res = 0;
-            3: res = 0;  // cond instrs
+            3: begin
+                if (cond_true) res = opc[3] ? op1 + 1 : op1;
+                else res = op2_i;
+            end
             default: res = 0;
         endcase
 

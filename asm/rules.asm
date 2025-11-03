@@ -44,7 +44,7 @@
 }
 #subruledef imm16n {
     {i} => {
-        i = !i`32
+        i = !(i`32)
         assert(i[31:16] == 0, "invalid immediate")
         assert(i[15:0] != 0xffff)
         i[15:0]
@@ -52,7 +52,7 @@
 }
 #subruledef imm16hn {
     {i} => {
-        i = !i`32
+        i = !(i`32)
         assert(i[15:0] == 0, "invalid immediate")
         assert(i[31:16] != 0xffff)
         assert(i[31:16] != 0)
@@ -61,7 +61,7 @@
 }
 #subruledef imm16m {
     {i} => {
-        i = -i`32
+        i = -(i`32)
         assert(i[31:16] == 0, "invalid immediate")
         assert(i != 0)
         i[15:0]
@@ -69,7 +69,7 @@
 }
 #subruledef imm16hm {
     {i} => {
-        i = -i`32
+        i = -(i`32)
         assert(i[15:0] == 0, "invalid immediate")
         assert(i[31:16] != 0)
         i[31:16]
@@ -77,12 +77,6 @@
 }
 
 #subruledef br_imm {
-    bgt => 0x8
-    ble => 0x9
-    beq => 0xa
-    bne => 0xb
-    blt => 0xc
-    bge => 0xd
     jp => 0xe
     jl => 0xf
 }
@@ -132,6 +126,20 @@
     tstn => 0x26
 }
 
+#subruledef cond_mov {
+    sel => 0x30
+    sinc => 0x38
+}
+
+#subruledef cond_code {
+    gt => 0
+    le => 1
+    eq => 2
+    ne => 3
+    lt => 4
+    ge => 5
+}
+
 #subruledef mem {
     ldb => 0x20
     ldbs => 0x21
@@ -155,6 +163,7 @@
 }
 
 #ruledef rules {
+    b{c:cond_code} {i:jmpdst} => le(i @ 0b00 @ (8+c)`4)
     {op:br_imm} {i:jmpdst} => le(i @ 0b00 @ op`4)
 
     addi {rd:reg}, {ra:reg}, {i:imm16} => le(i @ ra @ rd @ 0x10`6)
@@ -210,12 +219,15 @@
     neg {rd:reg}, {rb:reg} => asm {sub {rd}, zr, {rb}}
     nop => asm {mov zr, zr}
 
+    {op:cond_mov}{c:cond_code} {rd:reg}, {ra:reg}, {rb:reg} => le((op+c)`11 @ rb @ ra @ rd @ 0x3e`6)
+    mov{c:cond_code} {rd:reg}, {ra:reg} => asm {sel{c} {rd}, {ra}, {rd}}
+    set{c:cond_code} {rd:reg} => asm {sinc{c} {rd}, zr, zr}
+
     {op:mem} {rd:reg}, {i:s16}({ra:reg}) => le(i @ ra @ rd @ op`6)
     {op:mem} {rd:reg}, ({ra:reg}) => asm {{op} {rd}, 0({ra})}
 
     {op:io} {rd:reg}, {i:u16}({ra:reg}) => le(i @ ra @ rd @ op`6)
     {op:io} {rd:reg}, {i:u16} => le(i @ 0`5 @ rd @ op`6)
-
 
     {op:mem}x {rd:reg}, ({ra:reg}, {rb:reg}) => le((op|0x7c0)`11 @ rb @ ra @ rd @ 0x3e`6)
     {op:mem}x {rd:reg}, ({ra:reg}, {rb:reg}, {s}) => {assert(s == 1 << op[3:2], "bad scale")

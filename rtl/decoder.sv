@@ -91,11 +91,14 @@ module decoder (
                         logic [10:0] opc = instr[31:21];
                         if (opc[10:6] == 0) begin
                             logic is_cmp = opc[5:4] == 2;
+                            logic is_cond = opc[5:4] == 3;
                             out.alu_opc = opc[5:0];
                             out.r_rs1 = 1;
                             out.r_rs2 = 1;
                             out.w_rd = !is_cmp;
                             out.w_flags = is_cmp;
+                            out.cond_code = opc[2:0];
+                            out.r_flags = is_cond;
                         end else if (opc[10:6] == 'h1f) begin
                             out.r_rs1 = 1;
                             out.r_rs2 = 1;

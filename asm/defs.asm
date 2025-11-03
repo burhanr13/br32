@@ -10,6 +10,52 @@ start:
     jl main
     mtio zr, HALT
 
+divmod:
+    ; a0 : dividend
+    ; a1 : divisor
+    ; return a0 : dividend/divisor
+    ;        a1 : dividend%divisor
+    xor t0, a0, a1
+    tst a0, a0
+    neg a2, a0
+    movlt a0, a2
+    tst a1, a1
+    neg a2, a1
+    movlt a1, a2
+    ucmp a1, a0
+    moveq a1, zr
+    movgt a1, a0
+    seteq a2
+    movge a0, a2
+    bge .divend
+    tst a1, a1
+    beq .divend
+    mov a2, a1
+.divloop1:
+    slli a1, a1, 1
+    ucmp a1, a0
+    blt .divloop1
+    movi a3, 0
+.divloop2:
+    ucmp a0, a1
+    sub a4, a0, a1
+    movge a0, a4
+    setge a4
+    slli a3, a3, 1
+    or a3, a3, a4
+    srli a1, a1, 1
+    ucmp a1, a2
+    bge .divloop2
+    mov a1, a0
+    mov a0, a3
+.divend:
+    tst t0, t0
+    neg a2, a0
+    movlt a0, a2
+    neg a2, a1
+    movlt a1, a2
+    ret
+
 puts:
     ldb t0, (a0)
     tst t0, t0
@@ -18,17 +64,15 @@ puts:
     addi a0, a0, 1
     jp puts
 .end:
-    movi t0, "\n"`8
+    movi t0, "\n"
     mtio t0, COUT
     ret
 
 hexdigit:
     ucmpi a0, 9
-    bge .letter
-    addi a0, a0, "0"`8
-    ret
-.letter:
-    addi a0, a0, "a" - 10
+    addi a1, a0, "0"
+    addi a2, a0, "a" - 10
+    selgt a0, a2, a1
     ret
 
 print_hex:
@@ -61,6 +105,44 @@ print_hex:
     ldw lr, -4(sp)
     ret
 
+print_dec:
+    stw lr, -4(sp)
+    stw s0, -8(sp)
+    stw s1, -12(sp)
+    subi sp, sp, 24
+
+    tst a0, a0
+    neg a1, a0
+    sellt s0, a1, a0
+    bge .pos
+    movi t0, "-"
+    mtio t0, COUT
+.pos:
+    movi s1, 0
+.digitloop:
+    mov a0, s0
+    movi a1, 10
+    jl divmod
+    mov s0, a0
+    stbx a1, (sp, s1)
+    ucmpi s0, 0
+    beq .printloop
+    addi s1, s1, 1
+    jp .digitloop
+.printloop:
+    ldbx a0, (sp, s1)
+    addi a0, a0, "0"
+    mtio a0, COUT
+    subi s1, s1, 1
+    scmpi s1, 0
+    bge .printloop
+
+    addi sp, sp, 24
+    ldw s1, -12(sp)
+    ldw s0, -8(sp)
+    ldw lr, -4(sp)
+    ret
+
 printf:
     stw a7, -4(sp)
     stw a6, -8(sp)
@@ -73,18 +155,18 @@ printf:
     stw s0, -36(sp)
     stw s1, -40(sp)
     subi s1, sp, 28 ; argument array
-    mov s0, a0 ; string
+    mov s0, a0 ; format string
     subi sp, sp, 40
 
 .loop:
     ldb t0, (s0)
     tst t0, t0
     beq .end
-    ucmpi t0, "%"`8
+    ucmpi t0, "%"
     bne .put
     addi s0, s0, 1
     ldb t0, (s0)
-    ucmpi t0, "x"`8
+    ucmpi t0, "x"
     bne .notx
     ldw a0, (s1)
     addi s1, s1, 4
@@ -92,7 +174,15 @@ printf:
     addi s0, s0, 1
     jp .loop
 .notx:
-    movi t1, "%"`8
+    ucmpi t0, "d"
+    bne .notd
+    ldw a0, (s1)
+    addi s1, s1, 4
+    jl print_dec
+    addi s0, s0, 1
+    jp .loop
+.notd:
+    movi t1, "%"
     mtio t1, COUT
 .put:
     mtio t0, COUT

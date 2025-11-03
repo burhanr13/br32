@@ -38,16 +38,17 @@ module stage_ex (
     wire [31:0] alu_res;
     wire [1:0] flags_res;
 
+    wire cond_true = !r_flags || ((cond_code[2:1] == flags) ^ cond_code[0]);
+
     alu ALU (
         .opc(alu_opc),
         .imm(op2_imm),
         .op1(op1),
         .op2_i(op2_shift ? op2 << mem_sz : op2),
+        .cond_true(cond_true),
         .res(alu_res),
         .flags_res(flags_res)
     );
-
-    wire cond_true = !r_flags || ((cond_code[2:1] == flags) ^ cond_code[0]);
 
     always_comb begin
         out.pc = pc;
