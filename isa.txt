@@ -65,7 +65,7 @@ op2 = ~(imm<<16)
 1e - ornhi
 1f - xornhi
 
-addr = (ra) + simm*sz (sz=1,2,4)
+addr = (ra) + simm
 
 20 - ldb
 21 - ldbs
@@ -84,10 +84,10 @@ addr = (ra) + simm*sz (sz=1,2,4)
 
 io only accessible in kernel mode
 io is 16 bit address, each port 32 bits
-30 - rio
-31 - wio
+30 - mfio
+31 - mtio
 
-34 - adr    (rd) = $+simm*4
+34 - adr rd, label    (rd) = $+simm
 
 ri form:
 31      23      15      7
@@ -113,8 +113,8 @@ tst equiv to scmpi (rd&imm), 0
 0e - tstnhi
 
 imm must be 0
-10 - jpr    pc = (rd) (ret when rd=31)
-11 - jlr    pc = (rd), lr = $+4
+10 - jpr    pc = (rd & ~3) (ret when rd=31)
+11 - jlr    pc = (rd & ~3), lr = $+4
 
 rrr form:
 31      23      15      7
@@ -141,6 +141,7 @@ rrr form:
 025 - ucmp
 026 - tstn
 
+if (cond) ra else rb
 030 - selgt
 031 - selle
 032 - seleq
@@ -148,6 +149,7 @@ rrr form:
 034 - sellt
 035 - selge
 
+if (cond) ra + 1 else rb
 038 - sincgt
 039 - sincle
 03a - sinceq
@@ -157,18 +159,18 @@ rrr form:
 
 for below, if opc[4] set then rb is scaled by 1,2,4,4
 
-400 - ldbx
-401 - ldbsx
-402 - stbx
+7c0 - ldbx
+7c1 - ldbsx
+7c2 - stbx
 
-404 - ldhx
-405 - ldhsx
-406 - sthx
+7c4 - ldhx
+7c5 - ldhsx
+7c6 - sthx
 
-408 - ldwx
-40a - stwx
+7c8 - ldwx
+7ca - stwx
 
-413 - addx (rd) = (ra)+(rb)*sz (sz as above)
+7d3|sz<<2 - addx (rd) = (ra)+(rb)*sz (sz as above)
 
 
 rrii form:

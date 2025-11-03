@@ -13,7 +13,7 @@ module stage_id (
     import decoder_pkg::*;
 
     reg [31:0] pc, nextpc, instr;
-    reg bubble;
+    reg bubble, stall;
 
     wire decoded_t dec;
     decoder d (
@@ -25,29 +25,43 @@ module stage_id (
         out.pc = pc;
         out.nextpc = nextpc;
 
+        stall = 0;
+
         out.dec = dec;
 
-        if (EX.w_rd && dec.rs1 == EX.rd) out.op1 = EX.alu_res;
-        else if (MEM.w_rd && dec.rs1 == MEM.rd) out.op1 = MEM.res;
+        if (dec.op1_pc) out.op1 = pc;
+        else if (EX.w_rd && dec.rs1 == EX.rd) begin
+            if (EX.mem_r && dec.r_rs1) begin
+                stall = 1;
+                out.op1   = 0;
+            end else out.op1 = EX.alu_res;
+        end else if (MEM.w_rd && dec.rs1 == MEM.rd) out.op1 = MEM.res;
         else if (WB.w_rd && dec.rs1 == WB.rd) out.op1 = WB.res;
         else out.op1 = regs[dec.rs1];
 
         if (dec.op2_imm) out.op2 = dec.imm;
-        else if (EX.w_rd && dec.rs2 == EX.rd) out.op2 = EX.alu_res;
-        else if (MEM.w_rd && dec.rs2 == MEM.rd) out.op2 = MEM.res;
+        else if (EX.w_rd && dec.rs2 == EX.rd) begin
+            if (EX.mem_r && dec.r_rs2) begin
+                stall = 1;
+                out.op2   = 0;
+            end else out.op2 = EX.alu_res;
+        end else if (MEM.w_rd && dec.rs2 == MEM.rd) out.op2 = MEM.res;
         else if (WB.w_rd && dec.rs2 == WB.rd) out.op2 = WB.res;
         else out.op2 = regs[dec.rs2];
 
-        out.branch_dest = dec.branch_op1 ? out.op1 : pc + dec.branch_off;
+        out.branch_dest = dec.branch_op1 ? {out.op1[31:2], 2'b0} : pc + dec.branch_off;
 
-        out.bubble = bubble || EX.branch;
+        out.stall = stall && !bubble;
+        out.bubble = bubble || EX.branch || out.stall;
     end
 
     always_ff @(posedge clk) begin
-        pc <= IF.pc;
-        nextpc <= IF.nextpc;
-        instr <= IF.instr;
-        bubble <= IF.bubble || rst;
+        if (!out.stall) begin
+            pc <= IF.pc;
+            nextpc <= IF.nextpc;
+            instr <= IF.instr;
+            bubble <= IF.bubble || rst;
+        end
     end
 
 endmodule

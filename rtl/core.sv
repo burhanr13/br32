@@ -3,8 +3,20 @@ import pipeline_pkg::*;
 module core (
     input clk,
     input rst,
-    output [31:0] addr,
-    inout [31:0] data
+
+    output mem_r,
+    output mem_w,
+    output [1:0] mem_sz,
+    output [31:0] mem_addr,
+    inout [31:0] mem_data,
+
+    output [31:0] iaddr,
+    input  [31:0] idata,
+
+    output io_r,
+    output io_w,
+    output [15:0] io_addr,
+    inout [31:0] io_data
 );
 
     logic [31:0] regs[32];
@@ -18,6 +30,7 @@ module core (
 
     stage_if IF (
         .out(if_out),
+        .ID (id_out),
         .EX (ex_out),
         .*
     );
@@ -34,12 +47,19 @@ module core (
     stage_ex EX (
         .out(ex_out),
         .ID (id_out),
+        .MEM(mem_out),
+        .WB (wb_out),
         .*
     );
 
     stage_mem MEM (
         .out(mem_out),
-        .EX (ex_out),
+        .EX(ex_out),
+        .mem_r_o(mem_r),
+        .mem_w_o(mem_w),
+        .mem_sz_o(mem_sz),
+        .io_r_o(io_r),
+        .io_w_o(io_w),
         .*
     );
 

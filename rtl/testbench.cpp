@@ -5,13 +5,44 @@
 #include "Vcore.h"
 #include "Vcore___024root.h"
 
-unsigned char mem[0x10000];
+bool debug = false;
+bool trace = false;
+
+typedef unsigned char u8;
+typedef unsigned short u16;
+typedef unsigned int u32;
+
+u8 mem[0x10000];
 
 Vcore model;
 
-unsigned int cycles = 0;
+long cycles = 0;
 
 bool done = false;
+
+enum class IoPort { HALT = 0x0000, COUT = 0x0001, CLK = 0x0002 };
+
+u32 rio(u16 port) {
+    switch (static_cast<IoPort>(port)) {
+        case IoPort::CLK:
+            return cycles;
+        default:
+            return 0;
+    }
+}
+
+void wio(u16 port, u32 data) {
+    switch (static_cast<IoPort>(port)) {
+        case IoPort::HALT:
+            done = true;
+            break;
+        case IoPort::COUT:
+            fputc(data, stdout);
+            break;
+        case IoPort::CLK:
+            break;
+    }
+}
 
 void dump() {
     printf("\tpipe: IF:%x ", model.rootp->core__DOT__if_out.__PVT__pc);
@@ -35,30 +66,77 @@ void dump() {
     } else {
         printf("WB:%x ", model.rootp->core__DOT__WB__DOT__pc);
     }
-    printf("\n");
-    printf("\t");
+    printf("\n\t");
+    const char* reg_names[] = {
+        "zr", "sp", "a0", "a1", "a2", "a3",  "a4",  "a5",  "a6",  "a7", "t0",
+        "t1", "t2", "t3", "t4", "t5", "t6",  "s0",  "s1",  "s2",  "s3", "s4",
+        "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "lr"};
     for (int i = 0; i < 32; i++) {
-        printf("r%d=%x ", i, model.rootp->core__DOT__regs[i]);
+        printf("%s=%x ", reg_names[i], model.rootp->core__DOT__regs[i]);
         if (i % 8 == 7) printf("\n\t");
     }
     const char* flag_names[4] = {"GT", "EQ", "LT", "??"};
     printf("flags=%s\n", flag_names[model.rootp->core__DOT__EX__DOT__flags]);
 
-    if (0x54 == model.rootp->core__DOT__WB__DOT__pc) done = true;
+    printf("IF=%s\n", VL_TO_STRING(model.rootp->core__DOT__if_out).c_str());
+    printf("ID=%s\n", VL_TO_STRING(model.rootp->core__DOT__id_out).c_str());
+    printf("EX=%s\n", VL_TO_STRING(model.rootp->core__DOT__ex_out).c_str());
+    printf("MEM=%s\n", VL_TO_STRING(model.rootp->core__DOT__mem_out).c_str());
+    printf("WB=%s\n", VL_TO_STRING(model.rootp->core__DOT__wb_out).c_str());
 }
 
 void step() {
-    printf("cycle: %d\n", cycles);
+    if (debug) printf("cycle: %ld\n", cycles);
 
     model.clk = 1;
     model.eval();
     model.rst = 0;
     model.clk = 0;
-    model.data = *(int*) &mem[model.addr];
-    printf("\tfetch [%x]=%08x\n", model.addr, model.data);
+
+    model.idata = *(u32*) &mem[model.iaddr];
+    if (debug) printf("\tfetch [%x]=%08x\n", model.iaddr, model.idata);
+    if (model.mem_r) {
+        switch (model.mem_sz) {
+            case 0:
+                model.mem_data = *(u8*) &mem[model.mem_addr];
+                break;
+            case 1:
+                model.mem_data = *(u16*) &mem[model.mem_addr];
+                break;
+            case 2:
+                model.mem_data = *(u32*) &mem[model.mem_addr];
+                break;
+        }
+        if (debug)
+            printf("\tmem read %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
+                   model.mem_data);
+    } else if (model.mem_w) {
+        switch (model.mem_sz) {
+            case 0:
+                *(u8*) &mem[model.mem_addr] = model.mem_data;
+                break;
+            case 1:
+                *(u16*) &mem[model.mem_addr] = model.mem_data;
+                break;
+            case 2:
+                *(u32*) &mem[model.mem_addr] = model.mem_data;
+                break;
+        }
+        if (debug)
+            printf("\tmem write %d [%x]=%x\n", 8 << model.mem_sz,
+                   model.mem_addr, model.mem_data);
+    }
+    if (model.io_r) {
+        model.io_data = rio(model.io_addr);
+        if (debug) printf("\tio read [%x]=%x\n", model.io_addr, model.io_data);
+    } else if (model.io_w) {
+        wio(model.io_addr, model.io_data);
+        if (debug) printf("\tio write [%x]=%x\n", model.io_addr, model.io_data);
+    }
+
     model.eval();
 
-    dump();
+    if (trace) dump();
 
     cycles++;
 }

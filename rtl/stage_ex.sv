@@ -5,6 +5,8 @@ module stage_ex (
     input rst,
     output ex_out_t out,
     input id_out_t ID,
+    input mem_out_t MEM,
+    input wb_out_t WB,
     input [31:0] regs[32]
 );
 
@@ -24,6 +26,13 @@ module stage_ex (
     reg branch, link;
     reg [31:0] branch_dest;
 
+    reg mem_r, mem_w;
+    reg [1:0] mem_sz;
+    reg op2_shift;
+    reg mem_sx;
+
+    reg io_r, io_w;
+
     reg bubble;
 
     wire [31:0] alu_res;
@@ -33,7 +42,7 @@ module stage_ex (
         .opc(alu_opc),
         .imm(op2_imm),
         .op1(op1),
-        .op2_i(op2),
+        .op2_i(op2_shift ? op2 << mem_sz : op2),
         .res(alu_res),
         .flags_res(flags_res)
     );
@@ -45,7 +54,15 @@ module stage_ex (
         out.nextpc = nextpc;
 
         out.alu_res = alu_res;
-        out.mem_data = regs[rs3];
+
+        if (MEM.w_rd && rs3 == MEM.rd) out.op3 = MEM.res;
+        else if (WB.w_rd && rs3 == WB.rd) out.op3 = WB.res;
+        else out.op3 = regs[rs3];
+
+        if (mem_w) begin
+            if (mem_sz == 0) out.op3 = {4{out.op3[7:0]}};
+            else if (mem_sz == 1) out.op3 = {2{out.op3[15:0]}};
+        end
 
         out.rd = rd;
         out.w_rd = w_rd && !bubble;
@@ -53,6 +70,13 @@ module stage_ex (
         out.link = link;
 
         out.branch_dest = branch_dest;
+
+        out.mem_r = mem_r;
+        out.mem_w = mem_w;
+        out.mem_sz = mem_sz;
+        out.mem_sx = mem_sx;
+        out.io_r = io_r;
+        out.io_w = io_w;
 
         out.bubble = bubble;
     end
@@ -74,10 +98,17 @@ module stage_ex (
         branch <= ID.dec.branch;
         link <= ID.dec.link;
         branch_dest <= ID.branch_dest;
+        mem_r <= ID.dec.mem_r;
+        mem_w <= ID.dec.mem_w;
+        mem_sz <= ID.dec.mem_sz;
+        op2_shift <= ID.dec.op2_shift;
+        mem_sx <= ID.dec.mem_sx;
+        io_r <= ID.dec.io_r;
+        io_w <= ID.dec.io_w;
 
         bubble <= ID.bubble || rst;
 
-        if (!out.bubble && w_flags) flags <= flags_res;
+        if (!bubble && w_flags) flags <= flags_res;
     end
 
 endmodule

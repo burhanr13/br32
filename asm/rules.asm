@@ -1,3 +1,5 @@
+#once
+
 #subruledef reg {
     zr => 0`5
     sp => 1`5
@@ -99,6 +101,14 @@
     }
 }
 
+#subruledef adrdst {
+    {i} => {
+        off = i - $
+        assert(-(1<<15) <= off && off < 1<<15, "label too far")
+        off[15:0]
+    }
+}
+
 #subruledef alu_reg {
     add => 0x00
     and => 0x01
@@ -120,6 +130,28 @@
     scmp => 0x24
     ucmp => 0x25
     tstn => 0x26
+}
+
+#subruledef mem {
+    ldb => 0x20
+    ldbs => 0x21
+    stb => 0x22
+    ldh => 0x24
+    ldhs => 0x25
+    sth => 0x26
+    ldw => 0x28
+    stw => 0x2a
+}
+
+#subruledef scale {
+    1 => 0
+    2 => 1
+    4 => 2
+}
+
+#subruledef io {
+    mfio => 0x30
+    mtio => 0x31
 }
 
 #ruledef rules {
@@ -144,18 +176,20 @@
         ori {rd}, {rd}, {i}[15:0]
     }
 
-    {op:cmp_imm} {ra:reg}, {i:imm16} => le(i @ ra @ op`5 @ 0b111000)
-    {op:cmp_imm} {ra:reg}, {i:imm16m} => le(i @ ra @ (op ^ 0x4)`5 @ 0b111000)
-    {op:cmp_imm} {ra:reg}, {i:imm16hm} => le(i @ ra @ (op | 0x8)`5 @ 0b111000)
-    tsti {ra:reg}, {i:imm16} => le(i @ ra @ 0x2`5 @ 0b111000)
-    tsti {ra:reg}, {i:imm16n} => le(i @ ra @ 0x6`5 @ 0b111000)
-    tsti {ra:reg}, {i:imm16h} => le(i @ ra @ 0xa`5 @ 0b111000)
-    tsti {ra:reg}, {i:imm16hn} => le(i @ ra @ 0xe`5 @ 0b111000)
+    {op:cmp_imm} {ra:reg}, {i:imm16} => le(i @ ra @ op`5 @ 0x38`6)
+    {op:cmp_imm} {ra:reg}, {i:imm16m} => le(i @ ra @ (op ^ 0x4)`5 @ 0x38`6)
+    {op:cmp_imm} {ra:reg}, {i:imm16hm} => le(i @ ra @ (op | 0x8)`5 @ 0x38`6)
+    tsti {ra:reg}, {i:imm16} => le(i @ ra @ 0x2`5 @ 0x38`6)
+    tsti {ra:reg}, {i:imm16n} => le(i @ ra @ 0x6`5 @ 0x38`6)
+    tsti {ra:reg}, {i:imm16h} => le(i @ ra @ 0xa`5 @ 0x38`6)
+    tsti {ra:reg}, {i:imm16hn} => le(i @ ra @ 0xe`5 @ 0x38`6)
 
     {op:br_reg} {ra:reg} => le(0`16 @ ra @ op`5 @ 0b111000)
     ret => asm {jpr lr}
 
-    {op:rotm_imm} {rd:reg}, {ra:reg}, {i1:u5}, {i2:u5} => le(op`6 @ i2 @ i1 @ ra @ rd @ 0b111001)
+    adr {rd:reg}, {i:adrdst} => le(i @ 0`5 @ rd @ 0x34`6)
+
+    {op:rotm_imm} {rd:reg}, {ra:reg}, {i1:u5}, {i2:u5} => le(op`6 @ i2 @ i1 @ ra @ rd @ 0x39`6)
     ubfe {rd:reg}, {ra:reg}, {lo}, {sz} => {assert(lo+sz <= 32, "invalid bitfield"), asm {rormi {rd}, {ra}, {lo}, 32-{sz}}}
     sbfe {rd:reg}, {ra:reg}, {lo}, {sz} => {assert(lo+sz <= 32, "invalid bitfield"), asm {rorsmi {rd}, {ra}, {lo}, 32-{sz}}}
     bfm {rd:reg}, {ra:reg}, {lo}, {sz} => {assert(lo+sz <= 32, "invalid bitfield"), asm {rolmi {rd}, {ra}, {lo}, 32-{sz}}}
@@ -169,11 +203,30 @@
     rori {rd:reg}, {ra:reg}, {i} => asm {rormi {rd}, {ra}, {i}, 0}
     roli {rd:reg}, {ra:reg}, {i} => asm {rolmi {rd}, {ra}, {i}, 0}
 
-    {op:alu_reg} {rd:reg}, {ra:reg}, {rb:reg} => le(op`11 @ rb @ ra @ rd @ 0b111110)
-    {op:cmp_reg} {ra:reg}, {rb:reg} => le(op`11 @ rb @ ra @ 0`5 @ 0b111110)
+    {op:alu_reg} {rd:reg}, {ra:reg}, {rb:reg} => le(op`11 @ rb @ ra @ rd @ 0x3e`6)
+    {op:cmp_reg} {ra:reg}, {rb:reg} => le(op`11 @ rb @ ra @ 0`5 @ 0x3e`6)
     mov {rd:reg}, {rb:reg} => asm {or {rd}, zr, {rb}}
     not {rd:reg}, {rb:reg} => asm {orn {rd}, zr, {rb}}
     neg {rd:reg}, {rb:reg} => asm {sub {rd}, zr, {rb}}
     nop => asm {mov zr, zr}
+
+    {op:mem} {rd:reg}, {i:s16}({ra:reg}) => le(i @ ra @ rd @ op`6)
+    {op:mem} {rd:reg}, ({ra:reg}) => asm {{op} {rd}, 0({ra})}
+
+    {op:io} {rd:reg}, {i:u16}({ra:reg}) => le(i @ ra @ rd @ op`6)
+    {op:io} {rd:reg}, {i:u16} => le(i @ 0`5 @ rd @ op`6)
+
+
+    {op:mem}x {rd:reg}, ({ra:reg}, {rb:reg}) => le((op|0x7c0)`11 @ rb @ ra @ rd @ 0x3e`6)
+    {op:mem}x {rd:reg}, ({ra:reg}, {rb:reg}, {s}) => {assert(s == 1 << op[3:2], "bad scale")
+                                                      le((op|0x7d0)`11 @ rb @ ra @ rd @ 0x3e`6)}
+    addx {rd:reg}, ({ra:reg}, {rb:reg}, {s:scale}) => le((0x7d3|s<<2)`11 @ rb @ ra @ rd @ 0x3e`6)
+}
+
+#ruledef {
+    db {b} => b`8
+    dh {h} => le(h`16)
+    dw {w} => le(w`32)
+    ds {s} => s @ 0x00
 }
 
