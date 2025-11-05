@@ -10,6 +10,16 @@
     r{ri: u5} => {assert(ri != 0, "access zero register with zr"), ri}
 }
 
+#subruledef sreg {
+    {i:u16} => i
+
+    ie => 0x1000
+    sie => 0x1001
+    scr => 0x1002
+    elr => 0x1003
+    einfo => 0x1004
+}
+
 #subruledef logic_imm {
     andi => 0x11
     ori => 0x12
@@ -235,6 +245,15 @@
     {op:mem}x {rd:reg}, ({ra:reg}, {rb:reg}, {s}) => {assert(s == 1 << op[3:2], "bad scale")
                                                       le((op|0x7d0)`11 @ rb @ ra @ rd @ 0x3e`6)}
     addx {rd:reg}, ({ra:reg}, {rb:reg}, {s:scale}) => le((0x7d3|s<<2)`11 @ rb @ ra @ rd @ 0x3e`6)
+
+    scall {i:u16} => le(i @ 0`5 @ 0`5 @ 0x3d`6)
+    eret => le(0`16 @ 1`5 @ 0`5 @ 0x3d`6)
+
+    mfsr {rd:reg}, {i:sreg} => le(i`16 @ 4`5 @ rd @ 0x3d`6)
+    mtsr {rd:reg}, {i:sreg} => le(i`16 @ 5`5 @ rd @ 0x3d`6)
+    mfcr {rd:reg} => le(0`16 @ 6`5 @ rd @ 0x3d`6)
+    mtcr {rd:reg} => le(0`16 @ 7`5 @ rd @ 0x3d`6)
+
 }
 
 #ruledef {
@@ -243,6 +262,3 @@
     dw {w} => le(w`32)
     ds {s} => s @ 0x00
 }
-
-
-ucmpi t0, 0xffffff88

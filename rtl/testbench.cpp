@@ -47,7 +47,7 @@ void wio(u16 port, u32 data) {
 }
 
 void dump() {
-    printf("\tpipe: IF:%x ", model.rootp->core__DOT__if_out.__PVT__pc);
+    printf("\tpipe: IF:%x ", model.rootp->core__DOT__IF__DOT__pc);
     if (model.rootp->core__DOT__ID__DOT__bubble) {
         printf("ID:() ");
     } else {
@@ -77,8 +77,8 @@ void dump() {
         printf("%s=%x ", reg_names[i], model.rootp->core__DOT__regs[i]);
         if (i % 8 == 7) printf("\n\t");
     }
-    const char* flag_names[4] = {"GT", "EQ", "LT", "??"};
-    printf("flags=%s\n", flag_names[model.rootp->core__DOT__EX__DOT__flags]);
+    const char* conditions[4] = {"GT", "EQ", "LT", "??"};
+    printf("cr=%s\n", conditions[model.rootp->core__DOT__cmp_res]);
 
     // printf("\tIF=%s\n",
     // VL_TO_STRING(model.rootp->core__DOT__if_out).c_str());
@@ -92,6 +92,51 @@ void dump() {
     // VL_TO_STRING(model.rootp->core__DOT__wb_out).c_str());
 }
 
+void handle_bus() {
+    model.idata = *(u32*) &mem[model.iaddr];
+    if (bus_trace) printf("\tfetch [%x]=%08x\n", model.iaddr, model.idata);
+    if (model.mem_r) {
+        switch (model.mem_sz) {
+            case 0:
+                model.mem_rdata = *(u8*) &mem[model.mem_addr];
+                break;
+            case 1:
+                model.mem_rdata = *(u16*) &mem[model.mem_addr];
+                break;
+            case 2:
+                model.mem_rdata = *(u32*) &mem[model.mem_addr];
+                break;
+        }
+        if (bus_trace)
+            printf("\tmem read %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
+                   model.mem_rdata);
+    } else if (model.mem_w) {
+        switch (model.mem_sz) {
+            case 0:
+                *(u8*) &mem[model.mem_addr] = model.mem_wdata;
+                break;
+            case 1:
+                *(u16*) &mem[model.mem_addr] = model.mem_wdata;
+                break;
+            case 2:
+                *(u32*) &mem[model.mem_addr] = model.mem_wdata;
+                break;
+        }
+        if (bus_trace)
+            printf("\tmem write %d [%x]=%x\n", 8 << model.mem_sz,
+                   model.mem_addr, model.mem_wdata);
+    }
+    if (model.io_r) {
+        model.io_rdata = rio(model.io_addr);
+        if (bus_trace)
+            printf("\tio read [%x]=%x\n", model.io_addr, model.io_rdata);
+    } else if (model.io_w) {
+        wio(model.io_addr, model.io_wdata);
+        if (bus_trace)
+            printf("\tio write [%x]=%x\n", model.io_addr, model.io_wdata);
+    }
+}
+
 void step() {
     if (bus_trace || cpu_trace) printf("cycle: %ld\n", cycles);
 
@@ -99,53 +144,11 @@ void step() {
     model.eval();
     model.rst = 0;
     model.clk = 0;
-
-    model.idata = *(u32*) &mem[model.iaddr];
-    if (bus_trace) printf("\tfetch [%x]=%08x\n", model.iaddr, model.idata);
-    if (model.mem_r) {
-        switch (model.mem_sz) {
-            case 0:
-                model.mem_data = *(u8*) &mem[model.mem_addr];
-                break;
-            case 1:
-                model.mem_data = *(u16*) &mem[model.mem_addr];
-                break;
-            case 2:
-                model.mem_data = *(u32*) &mem[model.mem_addr];
-                break;
-        }
-        if (bus_trace)
-            printf("\tmem read %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
-                   model.mem_data);
-    } else if (model.mem_w) {
-        switch (model.mem_sz) {
-            case 0:
-                *(u8*) &mem[model.mem_addr] = model.mem_data;
-                break;
-            case 1:
-                *(u16*) &mem[model.mem_addr] = model.mem_data;
-                break;
-            case 2:
-                *(u32*) &mem[model.mem_addr] = model.mem_data;
-                break;
-        }
-        if (bus_trace)
-            printf("\tmem write %d [%x]=%x\n", 8 << model.mem_sz,
-                   model.mem_addr, model.mem_data);
-    }
-    if (model.io_r) {
-        model.io_data = rio(model.io_addr);
-        if (bus_trace)
-            printf("\tio read [%x]=%x\n", model.io_addr, model.io_data);
-    } else if (model.io_w) {
-        wio(model.io_addr, model.io_data);
-        if (bus_trace)
-            printf("\tio write [%x]=%x\n", model.io_addr, model.io_data);
-    }
-
     model.eval();
 
     if (cpu_trace) dump();
+
+    handle_bus();
 
     cycles++;
 }

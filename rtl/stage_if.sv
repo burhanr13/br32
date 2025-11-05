@@ -1,8 +1,13 @@
 import pipeline_pkg::*;
 
-module stage_if (
+module stage_if #(
+    logic [31:0] RESET_VEC = 0
+) (
     input clk,
-    input rst,
+    input exn,
+    input [5:0] exn_type,
+    input eret,
+    input [31:0] elr,
     output if_out_t out,
     input id_out_t ID,
     input ex_out_t EX,
@@ -13,16 +18,22 @@ module stage_if (
     reg [31:0] pc;
 
     always_comb begin
-        out.pc = EX.branch ? EX.branch_dest : pc;
-        out.nextpc = out.pc + 4;
-        iaddr = out.pc;
+        out.pc = pc;
+        out.nextpc = pc + 4;
         out.instr = idata;
-        out.bubble = 0;
+        if (exn) begin
+            if (eret) out.nextpc = elr;
+            else out.nextpc = {RESET_VEC[31:8], exn_type, 2'b0};
+        end else out.nextpc = ID.branch ? ID.branch_dest : pc + 4;
+
+        out.bubble = ID.branch;
     end
 
     always_ff @(posedge clk) begin
-        if (rst) pc <= 0;
-        else if (!ID.stall) pc <= out.nextpc;
+        if (!ID.stall) begin
+            pc <= out.nextpc;
+            iaddr <= out.nextpc;
+        end
     end
 
 endmodule

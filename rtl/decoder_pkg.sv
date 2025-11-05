@@ -10,8 +10,8 @@ package decoder_pkg;
         logic [4:0] rs3;
         logic r_rs3;
 
-        logic r_flags;
-        logic w_flags;
+        logic r_cr;
+        logic w_cr;
 
         logic branch;
         logic link;
@@ -20,6 +20,7 @@ package decoder_pkg;
         logic [2:0] cond_code;
 
         logic op1_pc;
+        logic op1_0;
         logic op2_imm;
 
         logic [31:0] imm;
@@ -36,7 +37,11 @@ package decoder_pkg;
         logic io_r;
         logic io_w;
 
-        logic undefined;
+        logic mfsr, mtsr;
+        logic mfcr, mtcr;
+
+        logic scall, eret;
+        logic udf;
     } decoded_t;
 
 endpackage

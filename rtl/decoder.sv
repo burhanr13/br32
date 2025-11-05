@@ -26,10 +26,10 @@ module decoder (
                     if (instr[2:1] == 3) begin
                         out.link = instr[0];
                     end else begin
-                        out.r_flags   = 1;
+                        out.r_cr = 1;
                         out.cond_code = instr[2:0];
                     end
-                end else out.undefined = 1;
+                end else out.udf = 1;
             end
             1: begin
                 out.alu_opc = {3'b0, instr[2:0]};
@@ -77,7 +77,7 @@ module decoder (
                             high_imm = opc[3];
                             out.op2_imm = 1;
                             out.r_rs1 = 1;
-                            out.w_flags = 1;
+                            out.w_cr = 1;
                         end
                     end
                     9: begin
@@ -86,6 +86,37 @@ module decoder (
                         out.op2_imm = 1;
                         out.r_rs1 = 1;
                         out.w_rd = 1;
+                    end
+                    'hd: begin
+                        logic [4:0] opc = instr[15:11];
+                        out.op1_0   = 1;
+                        out.op2_imm = 1;
+                        case (opc)
+                            0: begin
+                                out.scall = 1;
+                            end
+                            1: begin
+                                out.eret = 1;
+                            end
+                            4: begin
+                                out.mfsr = 1;
+                                out.w_rd = 1;
+                            end
+                            5: begin
+                                out.mtsr  = 1;
+                                out.r_rs3 = 1;
+                            end
+                            6: begin
+                                out.mfcr = 1;
+                                out.w_rd = 1;
+                            end
+                            7: begin
+                                out.mtcr  = 1;
+                                out.r_rs3 = 1;
+                                out.w_cr  = 1;
+                            end
+                            default: out.udf = 1;
+                        endcase
                     end
                     'he: begin
                         logic [10:0] opc = instr[31:21];
@@ -96,9 +127,9 @@ module decoder (
                             out.r_rs1 = 1;
                             out.r_rs2 = 1;
                             out.w_rd = !is_cmp;
-                            out.w_flags = is_cmp;
+                            out.w_cr = is_cmp;
                             out.cond_code = opc[2:0];
-                            out.r_flags = is_cond;
+                            out.r_cr = is_cond;
                         end else if (opc[10:6] == 'h1f) begin
                             out.r_rs1 = 1;
                             out.r_rs2 = 1;
@@ -109,12 +140,12 @@ module decoder (
                             out.mem_w = opc[1] && !opc[0];
                             out.w_rd = !out.mem_w;
                             out.r_rs3 = out.mem_w;
-                        end else out.undefined = 1;
+                        end else out.udf = 1;
                     end
-                    default: out.undefined = 1;
+                    default: out.udf = 1;
                 endcase
             end
-            default: out.undefined = 1;
+            default: out.udf = 1;
         endcase
 
         out.w_rd &= out.rd != 0;
@@ -124,8 +155,11 @@ module decoder (
             out.rd   = LR;
         end
 
-        out.imm[31:16] = high_imm ? instr[31:16] : sx_imm ? {16{instr[31]}} : 0;
-        out.imm[15:0]  = high_imm ? 0 : instr[31:16];
+        if (out.udf) out.imm = instr;
+        else begin
+            out.imm[31:16] = high_imm ? instr[31:16] : sx_imm ? {16{instr[31]}} : 0;
+            out.imm[15:0]  = high_imm ? 0 : instr[31:16];
+        end
     end
 
 endmodule

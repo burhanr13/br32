@@ -3,7 +3,7 @@ package alu_pkg;
     typedef enum {
         EQ,
         LT
-    } flag_e;
+    } cmp_res_e;
 
     typedef enum {
         ADD  = 0,

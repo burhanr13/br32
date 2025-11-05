@@ -5,7 +5,7 @@ module alu (
     input [31:0] op1,
     input [31:0] op2_i,
     output logic [31:0] res,
-    output logic [1:0] flags_res
+    output logic [1:0] cmp_res
 );
     import alu_pkg::*;
 
@@ -50,18 +50,18 @@ module alu (
 
         case (opc[1:0])
             0: begin
-                flags_res[EQ] = sum == 0;
-                flags_res[LT] = (op1[31] == op2[31]) ? op1[31] : ~cout;
+                cmp_res[EQ] = sum == 0;
+                cmp_res[LT] = (op1[31] == op2[31]) ? op1[31] : ~cout;
             end
             1: begin
-                flags_res[EQ] = sum == 0;
-                flags_res[LT] = ~cout;
+                cmp_res[EQ] = sum == 0;
+                cmp_res[LT] = ~cout;
             end
             2: begin
-                flags_res[EQ] = and_res == 0;
-                flags_res[LT] = and_res[31];
+                cmp_res[EQ] = and_res == 0;
+                cmp_res[LT] = and_res[31];
             end
-            default: flags_res = 0;
+            default: cmp_res = 0;
         endcase
     end
 

@@ -2,10 +2,10 @@ import pipeline_pkg::*;
 
 module stage_wb (
     input clk,
-    input rst,
     output wb_out_t out,
     input mem_out_t MEM,
-    output [31:0] regs[32]
+    output [31:0] regs[32],
+    output [1:0] cmp_reg
 );
 
     reg [31:0] pc;
@@ -32,9 +32,10 @@ module stage_wb (
         rd <= MEM.rd;
         w_rd <= MEM.w_rd;
 
-        bubble <= MEM.bubble || rst;
+        bubble <= MEM.bubble;
 
         if (!bubble && w_rd) regs[rd] <= out.res;
+        if (MEM.w_cr) cmp_reg <= MEM.cmp_res;
     end
 
 endmodule
