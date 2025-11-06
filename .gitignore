@@ -1,5 +1,7 @@
 obj_dir
 *.bin
 
+log*
+
 .cache
 compile_commands.json
