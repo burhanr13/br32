@@ -523,7 +523,7 @@ main:
     bnl fail
 .t152:
     movi a0, 152
-
+    
     mtio zr, TMRCNT
     mfsr t5, ie
 
@@ -554,13 +554,9 @@ main:
     bne fail
 .t153:
     movi a0, 153
-
-    mtsr t5, ie
-    movi t0, 0b1011
-    mtio t0, TMRCNT
-
     udf
 ..l2:
+    movi a0, 153
     mfsr t0, elr
     adr t1, ..l2
     ucmp t0, t1
@@ -568,6 +564,9 @@ main:
     mfsr t0, einfo
     ucmpi t0, -1
     bne fail
+    mtsr t5, ie
+    movi t0, 0b1011
+    mtio t0, TMRCNT
 .t154:
     movi a0, 154
     movi t0, 0xabcd

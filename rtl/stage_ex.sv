@@ -56,7 +56,7 @@ module stage_ex (
 
     always_ff @(posedge clk) begin
         EX.pc <= ID.pc;
-        EX.nextpc <= ID.bubble ? ID.pc : ID.nextpc;
+        EX.nextpc <= ID.stall ? ID.pc : ID.nextpc;
         op1 <= ID.op1;
         op2 <= ID.op2;
         alu_opc <= ID.dec.alu_opc;

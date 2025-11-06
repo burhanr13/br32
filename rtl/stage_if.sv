@@ -18,7 +18,6 @@ module stage_if #(
 
     always_comb begin
         IF.pc = pc;
-        IF.nextpc = pc + 4;
         IF.instr = idata;
         if (exn) begin
             if (eret) IF.nextpc = elr;

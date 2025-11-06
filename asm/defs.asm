@@ -14,7 +14,7 @@ irq_vector:
 scall_vector:
     eret
 udf_vector:
-    eret
+    jp udf_handler
 
 
 start:
@@ -233,9 +233,21 @@ timed:
     ldw lr, -4(sp)
     ret
 
+udf_handler:
+    stw lr, -4(sp)
+    subi sp, sp, 4
+    adr a0, .str0
+    mfsr a1, einfo
+    mfsr a2, elr
+    subi a2, a2, 4
+    jl printf
+    addi sp, sp, 4
+    ldw lr, -4(sp)
+    eret
+.str0: ds "undefined instruction %x at %x\n"
+
+#align 32
 setup_timer:
-    adr t0, counter
-    stw zr, (t0)
     movi t0, -500 
     mtio t0, TMRVAL
     movi t0, 0b1011 ; repeat, irq enable, timer enable
@@ -244,55 +256,23 @@ setup_timer:
     ret
 
 timer_handler:
-    stw lr, -4(sp)
-    stw t6, -8(sp)
-    stw t5, -12(sp)
-    stw t4, -16(sp)
-    stw t3, -20(sp)
-    stw t2, -24(sp)
-    stw t1, -28(sp)
-    stw t0, -32(sp)
-    stw a7, -36(sp)
-    stw a6, -40(sp)
-    stw a5, -44(sp)
-    stw a4, -48(sp)
-    stw a3, -52(sp)
-    stw a2, -56(sp)
-    stw a1, -60(sp)
-    stw a0, -64(sp)
-    subi sp, sp, 64
-
+    stw a0, -4(sp)
     mfio a0, TMRCNT
     andni a0, a0, 0b100 ; acknowledge interrupt
     mtio a0, TMRCNT
-
-    adr a0, counter
-    ldw a1, (a0)
-    addi a1, a1, 1
-    stw a1, (a0)
-    adr a0, .str0
-    jl printf
-
-    addi sp, sp, 64
-    ldw t6, -8(sp)
-    ldw t5, -12(sp)
-    ldw t4, -16(sp)
-    ldw t3, -20(sp)
-    ldw t2, -24(sp)
-    ldw t1, -28(sp)
-    ldw t0, -32(sp)
-    ldw a7, -36(sp)
-    ldw a6, -40(sp)
-    ldw a5, -44(sp)
-    ldw a4, -48(sp)
-    ldw a3, -52(sp)
-    ldw a2, -56(sp)
-    ldw a1, -60(sp)
-    ldw a0, -64(sp)
-    ldw lr, -4(sp)
+    
+    adr a0, user_timer_handler
+    ldw a0, (a0)
+    ucmp a0, zr
+    beq .l1
+    stw lr, -8(sp)
+    subi sp, sp, 8
+    jlr a0
+    addi sp, sp, 8
+    ldw lr, -8(sp)
+.l1:
+    ldw a0, -4(sp)
     eret
-.str0: ds "counter is %d\n"
 
-#align 32
-counter:
-    #res 4
+user_timer_handler:
+    dw 0
