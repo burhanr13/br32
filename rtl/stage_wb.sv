@@ -1,40 +1,30 @@
-import pipeline_pkg::*;
 
 module stage_wb (
     input clk,
-    output wb_out_t out,
-    input mem_out_t MEM,
+    wb_out_if.master WB,
+    mem_out_if.other MEM,
     output [31:0] regs[32],
     output [1:0] cmp_reg
 );
 
-    reg [31:0] pc;
-    reg [31:0] res;
-    reg [4:0] rd;
     reg w_rd;
 
-    reg bubble;
+    reg bubble  /*verilator public*/;
 
     always_comb begin
-        out.pc = pc;
-
-        out.res = res;
-
-        out.rd = rd;
-        out.w_rd = w_rd && !bubble;
-
-        out.bubble = bubble;
+        WB.w_rd   = w_rd && !bubble;
+        WB.bubble = bubble;
     end
 
     always_ff @(posedge clk) begin
-        pc <= MEM.pc;
-        res <= MEM.res;
-        rd <= MEM.rd;
-        w_rd <= MEM.w_rd;
+        WB.pc  <= MEM.pc;
+        WB.res <= MEM.res;
+        WB.rd  <= MEM.rd;
+        w_rd   <= MEM.w_rd;
 
         bubble <= MEM.bubble;
 
-        if (!bubble && w_rd) regs[rd] <= out.res;
+        if (!WB.bubble && w_rd) regs[WB.rd] <= WB.res;
         if (MEM.w_cr) cmp_reg <= MEM.cmp_res;
     end
 

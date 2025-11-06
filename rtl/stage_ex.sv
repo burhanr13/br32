@@ -1,98 +1,62 @@
-import pipeline_pkg::*;
 
 module stage_ex (
     input clk,
     input exn,
-    output ex_out_t out,
-    input id_out_t ID,
-    input mem_out_t MEM,
-    input wb_out_t WB,
+    ex_out_if.master EX,
+    id_out_if.other ID,
+    mem_out_if.other MEM,
+    wb_out_if.other WB,
     input [31:0] regs[32]
 );
 
-    reg [31:0] pc, nextpc;
     reg [31:0] op1, op2;
 
     reg [5:0] alu_opc;
     reg op2_imm;
     reg cond_true;
 
-    reg [4:0] rs3, rd;
+    reg [4:0] rs3;
     reg r_rs3, w_rd;
     reg w_cr, r_cr;
 
-    reg link;
-
-    reg mem_r, mem_w;
-    reg [1:0] mem_sz;
     reg op2_shift;
-    reg mem_sx;
 
-    reg io_r, io_w;
+    reg mtcr;
 
-    logic mfsr, mtsr;
-    logic mfcr, mtcr;
+    reg bubble  /*verilator public*/;
 
-    logic scall, eret;
-    logic udf;
-
-    reg bubble;
-
-    wire [31:0] alu_res;
     wire [1:0] cmp_res;
 
     alu ALU (
         .opc(alu_opc),
         .imm(op2_imm),
         .op1(op1),
-        .op2_i(op2_shift ? op2 << mem_sz : op2),
+        .op2_i(op2_shift ? op2 << EX.mem_sz : op2),
         .cond_true(cond_true),
-        .res(alu_res),
+        .res(EX.alu_res),
         .cmp_res(cmp_res)
     );
 
     always_comb begin
-        out.pc = pc;
-        out.nextpc = nextpc;
+        if (MEM.w_rd && rs3 == MEM.rd) EX.op3 = MEM.res;
+        else if (WB.w_rd && rs3 == WB.rd) EX.op3 = WB.res;
+        else EX.op3 = regs[rs3];
 
-        out.alu_res = alu_res;
-        out.cmp_res = cmp_res;
-
-        if (MEM.w_rd && rs3 == MEM.rd) out.op3 = MEM.res;
-        else if (WB.w_rd && rs3 == WB.rd) out.op3 = WB.res;
-        else out.op3 = regs[rs3];
-
-        if (mem_w) begin
-            if (mem_sz == 0) out.op3 = {4{out.op3[7:0]}};
-            else if (mem_sz == 1) out.op3 = {2{out.op3[15:0]}};
+        if (EX.mem_w) begin
+            if (EX.mem_sz == 0) EX.op3 = {4{EX.op3[7:0]}};
+            else if (EX.mem_sz == 1) EX.op3 = {2{EX.op3[15:0]}};
         end
 
-        out.rd = rd;
-        out.w_rd = w_rd && !bubble;
-        out.cmp_res = mtcr ? out.op3[1:0] : cmp_res;
-        out.w_cr = w_cr && !bubble;
-        out.link = link;
+        EX.w_rd = w_rd && !bubble;
+        EX.cmp_res = mtcr ? EX.op3[1:0] : cmp_res;
+        EX.w_cr = w_cr && !bubble;
 
-        out.mem_r = mem_r;
-        out.mem_w = mem_w;
-        out.mem_sz = mem_sz;
-        out.mem_sx = mem_sx;
-        out.io_r = io_r;
-        out.io_w = io_w;
-
-        out.mfcr = mfcr;
-        out.mfsr = mfsr;
-        out.mtsr = mtsr;
-        out.scall = scall;
-        out.eret = eret;
-        out.udf = udf;
-
-        out.bubble = bubble;
+        EX.bubble = bubble;
     end
 
     always_ff @(posedge clk) begin
-        pc <= ID.pc;
-        nextpc <= ID.nextpc;
+        EX.pc <= ID.pc;
+        EX.nextpc <= ID.bubble ? ID.pc : ID.nextpc;
         op1 <= ID.op1;
         op2 <= ID.op2;
         alu_opc <= ID.dec.alu_opc;
@@ -100,25 +64,25 @@ module stage_ex (
         cond_true <= ID.cond_true;
         rs3 <= ID.dec.rs3;
         r_rs3 <= ID.dec.r_rs3;
-        rd <= ID.dec.rd;
         w_rd <= ID.dec.w_rd;
+        EX.rd <= ID.dec.rd;
         r_cr <= ID.dec.r_cr;
         w_cr <= ID.dec.w_cr;
-        link <= ID.dec.link;
-        mem_r <= ID.dec.mem_r;
-        mem_w <= ID.dec.mem_w;
-        mem_sz <= ID.dec.mem_sz;
+        EX.link <= ID.dec.link;
+        EX.mem_r <= ID.dec.mem_r;
+        EX.mem_w <= ID.dec.mem_w;
+        EX.mem_sz <= ID.dec.mem_sz;
         op2_shift <= ID.dec.op2_shift;
-        mem_sx <= ID.dec.mem_sx;
-        io_r <= ID.dec.io_r;
-        io_w <= ID.dec.io_w;
-        mfsr <= ID.dec.mfsr;
-        mtsr <= ID.dec.mtsr;
-        mfcr <= ID.dec.mfcr;
+        EX.mem_sx <= ID.dec.mem_sx;
+        EX.io_r <= ID.dec.io_r;
+        EX.io_w <= ID.dec.io_w;
+        EX.mfsr <= ID.dec.mfsr;
+        EX.mtsr <= ID.dec.mtsr;
+        EX.mfcr <= ID.dec.mfcr;
         mtcr <= ID.dec.mtcr;
-        scall <= ID.dec.scall;
-        eret <= ID.dec.eret;
-        udf <= ID.dec.udf;
+        EX.scall <= ID.dec.scall;
+        EX.eret <= ID.dec.eret;
+        EX.udf <= ID.dec.udf;
 
         bubble <= ID.bubble || exn;
     end

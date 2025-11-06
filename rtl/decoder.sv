@@ -155,8 +155,11 @@ module decoder (
             out.rd   = LR;
         end
 
-        if (out.udf) out.imm = instr;
-        else begin
+        if (out.udf) begin
+            out.op1_0 = 1;
+            out.op2_imm = 1;
+            out.imm = instr;
+        end else begin
             out.imm[31:16] = high_imm ? instr[31:16] : sx_imm ? {16{instr[31]}} : 0;
             out.imm[15:0]  = high_imm ? 0 : instr[31:16];
         end

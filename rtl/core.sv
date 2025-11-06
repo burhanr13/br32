@@ -1,4 +1,3 @@
-import pipeline_pkg::*;
 
 module core (
     input clk,
@@ -22,9 +21,9 @@ module core (
     output [31:0] io_wdata
 );
 
-    reg [31:0] regs[32];
+    reg [31:0] regs[32] /*verilator public*/;
     assign regs[0] = 0;
-    reg [1:0] cmp_reg;
+    reg [1:0] cmp_reg /*verilator public*/;
 
     wire exn;
     wire eret;
@@ -33,59 +32,31 @@ module core (
     wire [31:0] elr;
     wire [1:0] scr;
 
-    if_out_t if_out;
-    id_out_t id_out;
-    ex_out_t ex_out;
-    mem_out_t mem_out;
-    wb_out_t wb_out;
+    if_out_if IF ();
+    id_out_if ID ();
+    ex_out_if EX ();
+    mem_out_if MEM ();
+    wb_out_if WB ();
 
     wire [31:0] sr_rdata;
 
-    exn_unit e (
-        .EX (ex_out),
-        .MEM(mem_out),
-        .*
-    );
+    exn_unit e (.*);
 
-    stage_if IF (
-        .out(if_out),
-        .ID (id_out),
-        .EX (ex_out),
-        .*
-    );
+    stage_if s_if (.*);
 
-    stage_id ID (
-        .out(id_out),
-        .IF (if_out),
-        .EX (ex_out),
-        .MEM(mem_out),
-        .WB (wb_out),
-        .*
-    );
+    stage_id s_id (.*);
 
-    stage_ex EX (
-        .out(ex_out),
-        .ID (id_out),
-        .MEM(mem_out),
-        .WB (wb_out),
-        .*
-    );
+    stage_ex s_ex (.*);
 
-    stage_mem MEM (
-        .out(mem_out),
-        .EX(ex_out),
-        .mem_r_o(mem_r),
-        .mem_w_o(mem_w),
+    stage_mem s_mem (
+        .mem_r_o (mem_r),
+        .mem_w_o (mem_w),
         .mem_sz_o(mem_sz),
-        .io_r_o(io_r),
-        .io_w_o(io_w),
+        .io_r_o  (io_r),
+        .io_w_o  (io_w),
         .*
     );
 
-    stage_wb WB (
-        .out(wb_out),
-        .MEM(mem_out),
-        .*
-    );
+    stage_wb s_wb (.*);
 
 endmodule

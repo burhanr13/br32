@@ -19,6 +19,11 @@ main:
     adr a0, s3
     jl printf
 
+    adr a0, systemcall
+    jl timed
+    adr a0, s3
+    jl printf
+
     addi sp, sp, 4
     ldw lr, -4(sp)
     ret
@@ -62,6 +67,10 @@ mem:
     ldw a0, (a0) ; 0
     ldw a0, (a0) ; 0
     ret ; 2
+
+systemcall:
+    scall 0
+    ret
 
 s1: ds "nothing takes %d\n"
 s2: ds "something takes %d\n"

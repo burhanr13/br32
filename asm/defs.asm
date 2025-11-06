@@ -4,9 +4,22 @@
 #const HALT = 0x0000
 #const COUT = 0x0001
 #const CLK = 0x0002
+#const TMRCNT = 0x0003
+#const TMRVAL = 0x0004
+
+rst_vector:
+    jp start
+irq_vector:
+    jp timer_handler
+scall_vector:
+    eret
+udf_vector:
+    eret
+
 
 start:
     movi sp, 0x10000
+    jl setup_timer
     jl main
     mtio a0, HALT
 
@@ -220,4 +233,66 @@ timed:
     ldw lr, -4(sp)
     ret
 
+setup_timer:
+    adr t0, counter
+    stw zr, (t0)
+    movi t0, -500 
+    mtio t0, TMRVAL
+    movi t0, 0b1011 ; repeat, irq enable, timer enable
+    mtio t0, TMRCNT
+    mtsr t0, ie ; enable interrupts
+    ret
 
+timer_handler:
+    stw lr, -4(sp)
+    stw t6, -8(sp)
+    stw t5, -12(sp)
+    stw t4, -16(sp)
+    stw t3, -20(sp)
+    stw t2, -24(sp)
+    stw t1, -28(sp)
+    stw t0, -32(sp)
+    stw a7, -36(sp)
+    stw a6, -40(sp)
+    stw a5, -44(sp)
+    stw a4, -48(sp)
+    stw a3, -52(sp)
+    stw a2, -56(sp)
+    stw a1, -60(sp)
+    stw a0, -64(sp)
+    subi sp, sp, 64
+
+    mfio a0, TMRCNT
+    andni a0, a0, 0b100 ; acknowledge interrupt
+    mtio a0, TMRCNT
+
+    adr a0, counter
+    ldw a1, (a0)
+    addi a1, a1, 1
+    stw a1, (a0)
+    adr a0, .str0
+    jl printf
+
+    addi sp, sp, 64
+    ldw t6, -8(sp)
+    ldw t5, -12(sp)
+    ldw t4, -16(sp)
+    ldw t3, -20(sp)
+    ldw t2, -24(sp)
+    ldw t1, -28(sp)
+    ldw t0, -32(sp)
+    ldw a7, -36(sp)
+    ldw a6, -40(sp)
+    ldw a5, -44(sp)
+    ldw a4, -48(sp)
+    ldw a3, -52(sp)
+    ldw a2, -56(sp)
+    ldw a1, -60(sp)
+    ldw a0, -64(sp)
+    ldw lr, -4(sp)
+    eret
+.str0: ds "counter is %d\n"
+
+#align 32
+counter:
+    #res 4

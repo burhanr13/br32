@@ -496,6 +496,117 @@ main:
     ucmpi t2, 12
     bne fail
 
+    ; MISC
+.t150:
+    movi a0, 150
+    scmpi zr, -1
+    mfcr t0
+    ucmpi t0, 0
+    bne fail
+    scmpi zr, 0
+    mfcr t0
+    ucmpi t0, 1
+    bne fail
+    scmpi zr, 1
+    mfcr t0
+    ucmpi t0, 2
+    bne fail
+.t151:
+    movi a0, 151
+    mtcr zr
+    bng fail
+    movi t0, 1
+    mtcr t0
+    bne fail
+    movi t0, 2
+    mtcr t0
+    bnl fail
+.t152:
+    movi a0, 152
+
+    mtio zr, TMRCNT
+    mfsr t5, ie
+
+    mtsr zr, scr
+    movi t0, 2
+    mtcr t0
+    mtsr zr, sie
+    movi t0, 1
+    mtsr t0, ie
+    scall 0x1234
+..l1:
+    bnl fail
+    mfsr t0, elr
+    adr t1, ..l1
+    ucmp t0, t1
+    bne fail
+    mfsr t0, einfo
+    ucmpi t0, 0x1234
+    bne fail
+    mfsr t0, scr
+    ucmpi t0, 2
+    bne fail
+    mfsr t0, ie
+    ucmpi t0, 1
+    bne fail
+    mfsr t0, sie
+    ucmpi t0, 1
+    bne fail
+.t153:
+    movi a0, 153
+
+    mtsr t5, ie
+    movi t0, 0b1011
+    mtio t0, TMRCNT
+
+    udf
+..l2:
+    mfsr t0, elr
+    adr t1, ..l2
+    ucmp t0, t1
+    bne fail
+    mfsr t0, einfo
+    ucmpi t0, -1
+    bne fail
+.t154:
+    movi a0, 154
+    movi t0, 0xabcd
+    mtsr t0, elr
+    mtsr t0, einfo
+    mfsr t1, einfo
+    mfsr t2, elr
+    ucmpi t1, 0xabcd
+    bne fail
+    ucmpi t2, 0xabcd
+    bne fail
+.t155:
+    movi a0, 155
+    movi t0, 0
+    scall 0
+    addi t0, t0, 1
+    addi t0, t0, 1
+    addi t0, t0, 1
+    ucmpi t0, 3
+    bne fail
+    jp $+12
+    scall 0
+    jp fail
+.t156:
+    movi a0, 156
+    movi t0, 0
+    mtcr t0
+    bng fail
+    movi t0, 2
+    mtsr t0, scr
+    adr t0, ..l1
+    mtsr t0, elr
+    eret
+    jp fail
+    jp fail
+    jp fail
+..l1:
+    bnl fail
+
     
 success:
     adr a0, msg_success

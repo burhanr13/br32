@@ -248,6 +248,7 @@
 
     scall {i:u16} => le(i @ 0`5 @ 0`5 @ 0x3d`6)
     eret => le(0`16 @ 1`5 @ 0`5 @ 0x3d`6)
+    udf => 0xffffffff
 
     mfsr {rd:reg}, {i:sreg} => le(i`16 @ 4`5 @ rd @ 0x3d`6)
     mtsr {rd:reg}, {i:sreg} => le(i`16 @ 5`5 @ rd @ 0x3d`6)

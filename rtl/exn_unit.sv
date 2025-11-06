@@ -1,4 +1,3 @@
-import pipeline_pkg::*;
 
 typedef enum logic [5:0] {
     RST   = 0,
@@ -19,8 +18,8 @@ module exn_unit (
     input clk,
     input rst,
     input irq,
-    input ex_out_t EX,
-    input mem_out_t MEM,
+    ex_out_if.other EX,
+    mem_out_if.other MEM,
     input [1:0] cmp_reg,
     output exn,
     output [5:0] exn_type,
@@ -30,11 +29,11 @@ module exn_unit (
     output [1:0] scr
 );
 
-    reg ie;
-    reg saved_ie;
-    reg [1:0] saved_cr;
-    reg [31:0] saved_pc;
-    reg [31:0] exn_info;
+    reg ie  /*verilator public*/;
+    reg saved_ie  /*verilator public*/;
+    reg [1:0] saved_cr  /*verilator public*/;
+    reg [31:0] saved_pc  /*verilator public*/;
+    reg [31:0] exn_info  /*verilator public*/;
 
     logic save_exn_info;
 
@@ -73,7 +72,7 @@ module exn_unit (
             SR_SCR: sr_rdata = {30'b0, saved_cr};
             SR_ELR: sr_rdata = saved_pc;
             SR_EINFO: sr_rdata = exn_info;
-            default: sr_rdata = 'z;
+            default: sr_rdata = 0;
         endcase
     end
 

@@ -1,10 +1,9 @@
-import pipeline_pkg::*;
 
 module stage_mem (
     input clk,
     input exn,
-    output mem_out_t out,
-    input ex_out_t EX,
+    mem_out_if.master MEM,
+    ex_out_if.other EX,
     output mem_r_o,
     output mem_w_o,
     output [1:0] mem_sz_o,
@@ -21,10 +20,6 @@ module stage_mem (
     input [1:0] scr
 );
 
-    reg [31:0] pc, nextpc;
-
-    reg [31:0] alu_res;
-    reg [31:0] op3;
     reg mem_r;
     reg [1:0] mem_sz;
     reg mem_sx;
@@ -41,43 +36,39 @@ module stage_mem (
 
     reg link;
 
-    reg bubble;
+    reg bubble  /*verilator public*/;
 
     always_comb begin
-        out.pc = pc;
-        out.nextpc = nextpc;
-
-        out.alu_res = alu_res;
-
-        if (link) out.res = nextpc;
-        else if (mfcr) out.res = {30'b0, cmp_reg};
-        else if (mfsr) out.res = sr_rdata;
+        if (link) MEM.res = MEM.nextpc;
+        else if (mfcr) MEM.res = {30'b0, cmp_reg};
+        else if (mfsr) MEM.res = sr_rdata;
         else if (mem_r) begin
             case (mem_sz)
-                0: out.res = {{24{mem_sx && mem_rdata[7]}}, mem_rdata[7:0]};
-                1: out.res = {{16{mem_sx && mem_rdata[15]}}, mem_rdata[15:0]};
-                default: out.res = mem_rdata;
+                0: MEM.res = {{24{mem_sx && mem_rdata[7]}}, mem_rdata[7:0]};
+                1: MEM.res = {{16{mem_sx && mem_rdata[15]}}, mem_rdata[15:0]};
+                default: MEM.res = mem_rdata;
             endcase
-        end else if (io_r) out.res = io_rdata;
-        else out.res = alu_res;
+        end else if (io_r) MEM.res = io_rdata;
+        else MEM.res = MEM.alu_res;
 
-        out.rd = rd;
-        out.w_rd = w_rd && !bubble;
-        out.cmp_res = eret ? scr : cmp_res;
-        out.w_cr = w_cr && !bubble;
+        MEM.rd = rd;
+        MEM.w_rd = w_rd && !bubble;
+        MEM.cmp_res = eret ? scr : cmp_res;
+        MEM.w_cr = (w_cr || eret) && !bubble;
 
-        out.mtsr = mtsr && !bubble;
-        out.scall = scall && !bubble;
-        out.eret = eret && !bubble;
-        out.udf = udf && !bubble;
+        MEM.mtsr = mtsr && !bubble;
+        MEM.scall = scall && !bubble;
+        MEM.eret = eret && !bubble;
+        MEM.udf = udf && !bubble;
 
-        out.bubble = bubble;
+        MEM.bubble = bubble;
     end
 
     always_ff @(posedge clk) begin
-        pc <= EX.pc;
-        nextpc <= EX.nextpc;
-        alu_res <= EX.alu_res;
+        MEM.pc <= EX.pc;
+        MEM.nextpc <= EX.nextpc;
+        MEM.alu_res <= EX.alu_res;
+        MEM.op3 <= EX.op3;
         rd <= EX.rd;
         w_rd <= EX.w_rd;
         cmp_res <= EX.cmp_res;
@@ -87,7 +78,6 @@ module stage_mem (
         mem_sz <= EX.mem_sz;
         mem_sx <= EX.mem_sx;
         io_r <= EX.io_r;
-        op3 <= EX.op3;
         mfsr <= EX.mfsr;
         mtsr <= EX.mtsr;
         mfcr <= EX.mfcr;
