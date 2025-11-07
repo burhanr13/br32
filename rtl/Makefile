@@ -1,10 +1,10 @@
 
 .PHONY: build, clean
 
-VERILATOR_ARGS := --exe --cc --build -Wall -Wno-unusedsignal
+VERILATOR_ARGS := --exe --cc --build -Wall -Wno-unusedsignal -Wno-importstar
 
 build:
-	verilator $(VERILATOR_ARGS) core.sv testbench.cpp
+	verilator $(VERILATOR_ARGS) core.sv *_pkg.sv testbench.cpp
 
 clean:
 	rm -rf obj_dir

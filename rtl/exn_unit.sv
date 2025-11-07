@@ -21,10 +21,10 @@ module exn_unit (
     ex_out_if.other EX,
     mem_out_if.other MEM,
     input [1:0] cmp_reg,
-    output exn,
-    output [5:0] exn_type,
-    output eret,
-    output [31:0] sr_rdata,
+    output logic exn,
+    output logic [5:0] exn_type,
+    output logic eret,
+    output logic [31:0] sr_rdata,
     output [31:0] elr,
     output [1:0] scr
 );
@@ -41,7 +41,7 @@ module exn_unit (
     assign scr = saved_cr;
 
     always_comb begin
-        logic true_ie = (MEM.mtsr && MEM.alu_res == SR_IE) ? MEM.op3[0] : ie;
+        automatic logic true_ie = (MEM.mtsr && MEM.alu_res == SR_IE) ? MEM.op3[0] : ie;
 
         exn = 0;
         save_exn_info = 0;

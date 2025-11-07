@@ -213,7 +213,6 @@
     {op:rotm_imm} {rd:reg}, {ra:reg}, {i1:u5}, {i2:u5} => le(op`6 @ i2 @ i1 @ ra @ rd @ 0x39`6)
     ubfe {rd:reg}, {ra:reg}, {lo}, {sz} => {assert(lo+sz <= 32, "invalid bitfield"), asm {rormi {rd}, {ra}, {lo}, 32-{sz}}}
     sbfe {rd:reg}, {ra:reg}, {lo}, {sz} => {assert(lo+sz <= 32, "invalid bitfield"), asm {rorsmi {rd}, {ra}, {lo}, 32-{sz}}}
-    bfm {rd:reg}, {ra:reg}, {lo}, {sz} => {assert(lo+sz <= 32, "invalid bitfield"), asm {rolmi {rd}, {ra}, {lo}, 32-{sz}}}
     uxb {rd:reg}, {ra:reg} => asm {ubfe {rd}, {ra}, 0, 8}
     sxb {rd:reg}, {ra:reg} => asm {sbfe {rd}, {ra}, 0, 8}
     uxh {rd:reg}, {ra:reg} => asm {ubfe {rd}, {ra}, 0, 16}

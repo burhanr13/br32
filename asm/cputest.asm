@@ -314,11 +314,8 @@ main:
 .t50:
     movi a0, 50
     rolmi t1, t0, 28, 24
-    movi t2, 0x80000008
+    movi t2, 0x81000000
     ucmp t1, t2
-    bne fail
-    bfm t1, t0, 16, 8
-    ucmpi t1, 0x00880000
     bne fail
 .t51:
     movi a0, 51

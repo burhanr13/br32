@@ -22,7 +22,7 @@ module stage_id (
     );
 
     always_comb begin
-        logic stall = 0;
+        automatic logic stall = 0;
         logic [1:0] cr_val;
 
         ID.dec = dec;

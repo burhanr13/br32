@@ -176,12 +176,11 @@ rrii form:
 |opc  |imm2|imm1|ra  |rd  
 
 00 - rormi (rd) = ror((ra),imm1)[~imm2:0]
-04 - rolmi (rd) = rol((ra)[~imm2:0],imm1)
+04 - rolmi (rd) = rol((ra),imm1)[31:imm2]
 08 - rorsmi (rd) = sx32(ror((ra),imm1)[~imm2:0])
 
 ubfe rd, ra, lo, sz := rormi rd, ra, lo, 32-sz
 sbfe := ... but with rorsmi
-bfm rd, ra, lo, sz := rolmi rd, ra, lo, 32-sz
 
 uxb rd, ra := rormi rd, ra, 0, 24
 uxh rd, ra := rormi rd, ra, 0, 16

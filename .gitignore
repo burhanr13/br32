@@ -5,3 +5,6 @@ log*
 
 .cache
 compile_commands.json
+
+xsim*
+br32.*

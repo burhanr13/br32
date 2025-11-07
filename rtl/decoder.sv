@@ -1,14 +1,14 @@
+import decoder_pkg::*;
+
 module decoder (
     input [31:0] instr,
     output decoded_t out
 );
-    import decoder_pkg::*;
-
     localparam logic [4:0] LR = 31;
 
     always_comb begin
-        logic high_imm = 0;
-        logic sx_imm = 0;
+        automatic logic high_imm = 0;
+        automatic logic sx_imm = 0;
 
         out = '0;
 
@@ -66,7 +66,7 @@ module decoder (
                         out.w_rd = 1;
                     end
                     8: begin
-                        logic [4:0] opc = instr[10:6];
+                        automatic logic [4:0] opc = instr[10:6];
                         if (opc[4]) begin
                             out.branch = 1;
                             out.branch_op1 = 1;
@@ -81,14 +81,14 @@ module decoder (
                         end
                     end
                     9: begin
-                        logic [5:0] opc = instr[31:26];
+                        automatic logic [5:0] opc = instr[31:26];
                         out.alu_opc = {4'b0100, opc[3:2]};
                         out.op2_imm = 1;
                         out.r_rs1 = 1;
                         out.w_rd = 1;
                     end
                     'hd: begin
-                        logic [4:0] opc = instr[15:11];
+                        automatic logic [4:0] opc = instr[15:11];
                         out.op1_0   = 1;
                         out.op2_imm = 1;
                         case (opc)
@@ -119,10 +119,10 @@ module decoder (
                         endcase
                     end
                     'he: begin
-                        logic [10:0] opc = instr[31:21];
+                        automatic logic [10:0] opc = instr[31:21];
                         if (opc[10:6] == 0) begin
-                            logic is_cmp = opc[5:4] == 2;
-                            logic is_cond = opc[5:4] == 3;
+                            automatic logic is_cmp = opc[5:4] == 2;
+                            automatic logic is_cond = opc[5:4] == 3;
                             out.alu_opc = opc[5:0];
                             out.r_rs1 = 1;
                             out.r_rs2 = 1;

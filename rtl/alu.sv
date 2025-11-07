@@ -23,7 +23,7 @@ module alu (
     wire [31:0] shift_res;
     shifter shifter (
         .op(op1),
-        .sh_i(shamt),
+        .sh(shamt),
         .maskbits(shmask),
         .left(opc[0]),
         .sx(opc[1]),

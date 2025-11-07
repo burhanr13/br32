@@ -10,7 +10,7 @@ module stage_if #(
     if_out_if.master IF,
     id_out_if.other ID,
     ex_out_if.other EX,
-    output [31:0] iaddr,
+    output reg [31:0] iaddr,
     input [31:0] idata
 );
 

@@ -3,8 +3,8 @@ module stage_wb (
     input clk,
     wb_out_if.master WB,
     mem_out_if.other MEM,
-    output [31:0] regs[32],
-    output [1:0] cmp_reg
+    output reg [31:0] regs[32],
+    output reg [1:0] cmp_reg
 );
 
     reg w_rd;
