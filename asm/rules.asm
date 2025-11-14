@@ -3,9 +3,10 @@
 #subruledef reg {
     zr => 0`5
     sp => 1`5
-    a{ai: u5} => {assert(ai < 8), (2+ai)`5}
-    t{ti: u5} => {assert(ti < 7), (10+ti)`5}
+    a{ai: u5} => {assert(ai < 5), (2+ai)`5}
+    t{ti: u5} => {assert(ti < 10), (7+ti)`5}
     s{si: u5} => {assert(si < 14), (17+si)`5}
+    fp => 30`5
     lr => 31`5
     r{ri: u5} => {assert(ri != 0, "access zero register with zr"), ri}
 }

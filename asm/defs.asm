@@ -157,19 +157,16 @@ print_dec:
     ret
 
 printf:
-    stw a7, -4(sp)
-    stw a6, -8(sp)
-    stw a5, -12(sp)
-    stw a4, -16(sp)
-    stw a3, -20(sp)
-    stw a2, -24(sp)
-    stw a1, -28(sp)
-    stw lr, -32(sp)
-    stw s0, -36(sp)
-    stw s1, -40(sp)
-    subi s1, sp, 28 ; argument array
+    stw a4, -4(sp)
+    stw a3, -8(sp)
+    stw a2, -12(sp)
+    stw a1, -16(sp)
+    stw lr, -20(sp)
+    stw s0, -24(sp)
+    stw s1, -28(sp)
+    subi s1, sp, 16 ; argument array
     mov s0, a0 ; format string
-    subi sp, sp, 40
+    subi sp, sp, 28
 
 .loop:
     ldb t0, (s0)
@@ -202,10 +199,10 @@ printf:
     addi s0, s0, 1
     jp .loop
 .end:
-    addi sp, sp, 40
-    ldw s1, -40(sp)
-    ldw s0, -36(sp)
-    ldw lr, -32(sp)
+    addi sp, sp, 28
+    ldw s1, -28(sp)
+    ldw s0, -24(sp)
+    ldw lr, -20(sp)
     ret
     
 timed:
@@ -218,9 +215,6 @@ timed:
     mov a1, a2
     mov a2, a3
     mov a3, a4
-    mov a4, a5
-    mov a5, a6
-    mov a6, a7
 
     mfio s0, CLK
     jlr t0

@@ -1,8 +1,9 @@
 r0 = zero
 r1 = sp
-r2-r9 = a0-a7
-r10-r16 = t0-t6
-r17-r30 = s0-s13
+r2-r6 = a0-a4
+r7-r16 = t0-t9
+r17-r29 = s0-s12
+r30 = fp
 r31 = lr
 
 comparison result (cr): bit0:eq bit1:lt
@@ -61,6 +62,8 @@ op2 = ~(imm<<16)
 1d - andnhi
 1e - ornhi
 1f - xornhi
+
+movi rd, i := ori rd, zr, i
 
 addr = (ra) + simm
 
@@ -138,6 +141,11 @@ rrr form:
 025 - ucmp
 026 - tstn
 
+mov rd, rb := or rd, zr, rb
+not rd, rb := orn rd, zr, rb
+neg rd, rb := sub rd, zr, rb
+nop := mov zr, zr
+
 if (cond) ra else rb
 030 - selgt
 031 - selle
@@ -146,6 +154,8 @@ if (cond) ra else rb
 034 - sellt
 035 - selge
 
+mov{cc} rd, ra := sel{cc} rd, ra, rd
+
 if (cond) ra + 1 else rb
 038 - sincgt
 039 - sincle
@@ -153,6 +163,8 @@ if (cond) ra + 1 else rb
 03b - sincne
 03c - sinclt
 03d - sincge
+
+set{cc} := sinc{cc} rd, zr, zr
 
 for below, if opc[4] set then rb is scaled by 1,2,4,4
 

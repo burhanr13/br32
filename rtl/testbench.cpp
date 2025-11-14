@@ -46,14 +46,10 @@ union {
 
 u32 rio(u16 port) {
     switch (static_cast<IoPort>(port)) {
-        case IoPort::CLK:
-            return cycles;
-        case IoPort::TMRCNT:
-            return tmrcnt.raw;
-        case IoPort::TMRVAL:
-            return tmrval;
-        default:
-            return 0;
+        case IoPort::CLK: return cycles;
+        case IoPort::TMRCNT: return tmrcnt.raw;
+        case IoPort::TMRVAL: return tmrval;
+        default: return 0;
     }
 }
 
@@ -63,11 +59,8 @@ void wio(u16 port, u32 data) {
             exit_code = data;
             done = true;
             break;
-        case IoPort::COUT:
-            fputc(data, stdout);
-            break;
-        case IoPort::CLK:
-            break;
+        case IoPort::COUT: fputc(data, stdout); break;
+        case IoPort::CLK: break;
         case IoPort::TMRCNT: {
             bool old_ena = tmrcnt.ena;
             tmrcnt.raw = data;
@@ -76,9 +69,7 @@ void wio(u16 port, u32 data) {
             }
             break;
         }
-        case IoPort::TMRVAL:
-            tmrreset = data;
-            break;
+        case IoPort::TMRVAL: tmrreset = data; break;
     }
 }
 
@@ -118,9 +109,9 @@ void dump() {
     }
     DEBUG("\n\t");
     const char* reg_names[] = {
-        "zr", "sp", "a0", "a1", "a2", "a3",  "a4",  "a5",  "a6",  "a7", "t0",
-        "t1", "t2", "t3", "t4", "t5", "t6",  "s0",  "s1",  "s2",  "s3", "s4",
-        "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "lr"};
+        "zr", "sp", "a0", "a1", "a2", "a3",  "a4",  "t0",  "t1",  "t2", "t3",
+        "t4", "t5", "t6", "t7", "t8", "t9",  "s0",  "s1",  "s2",  "s3", "s4",
+        "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "fp", "lr"};
     for (int i = 0; i < 32; i++) {
         DEBUG("%s=%x ", reg_names[i], model.core->regs[i]);
         if (i % 8 == 7) DEBUG("\n\t");
@@ -150,29 +141,17 @@ void handle_bus() {
     DEBUG("\tfetch [%x]=%08x\n", model.iaddr, model.idata);
     if (model.mem_r) {
         switch (model.mem_sz) {
-            case 0:
-                model.mem_rdata = *(u8*) &mem[model.mem_addr];
-                break;
-            case 1:
-                model.mem_rdata = *(u16*) &mem[model.mem_addr];
-                break;
-            case 2:
-                model.mem_rdata = *(u32*) &mem[model.mem_addr];
-                break;
+            case 0: model.mem_rdata = *(u8*) &mem[model.mem_addr]; break;
+            case 1: model.mem_rdata = *(u16*) &mem[model.mem_addr]; break;
+            case 2: model.mem_rdata = *(u32*) &mem[model.mem_addr]; break;
         }
         DEBUG("\tmem read %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
               model.mem_rdata);
     } else if (model.mem_w) {
         switch (model.mem_sz) {
-            case 0:
-                *(u8*) &mem[model.mem_addr] = model.mem_wdata;
-                break;
-            case 1:
-                *(u16*) &mem[model.mem_addr] = model.mem_wdata;
-                break;
-            case 2:
-                *(u32*) &mem[model.mem_addr] = model.mem_wdata;
-                break;
+            case 0: *(u8*) &mem[model.mem_addr] = model.mem_wdata; break;
+            case 1: *(u16*) &mem[model.mem_addr] = model.mem_wdata; break;
+            case 2: *(u32*) &mem[model.mem_addr] = model.mem_wdata; break;
         }
         DEBUG("\tmem write %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
               model.mem_wdata);
@@ -211,9 +190,7 @@ int main(int argc, char** argv) {
         if ((*argv)[0] == '-') {
             for (char* p = &(*argv)[1]; *p; p++) {
                 switch (*p) {
-                    case 'd':
-                        debug = true;
-                        break;
+                    case 'd': debug = true; break;
                 }
             }
         } else {
