@@ -1,0 +1,3 @@
+[submodule "c/chibicc"]
+	path = c/chibicc
+	url = git@github.com:burhanr13/chibicc
