@@ -4,6 +4,7 @@ c/*.asm
 
 log*
 
+.clangd
 .cache
 compile_commands.json
 

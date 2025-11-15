@@ -19,11 +19,25 @@ udf_vector:
 
 start:
     movi sp, 0x10000
-    jl setup_timer
     jl main
     mtio a0, HALT
 
-divmod:
+__mul:
+    movi a2, 0
+.mulloop:
+    ucmpi a0, 0
+    beq .mulend
+    tsti a0, 1
+    add a3, a2, a1
+    movne a2, a3
+    srli a0, a0, 1
+    slli a1, a1, 1
+    jp .mulloop
+.mulend:
+    mov a0, a2
+    ret
+
+__div:
     ; a0 : dividend
     ; a1 : divisor
     ; return a0 : dividend/divisor
@@ -135,7 +149,7 @@ print_dec:
 .digitloop:
     mov a0, s0
     movi a1, 10
-    jl divmod
+    jl __div
     mov s0, a0
     stbx a1, (sp, s1)
     ucmpi s0, 0
@@ -247,6 +261,29 @@ setup_timer:
     movi t0, 0b1011 ; repeat, irq enable, timer enable
     mtio t0, TMRCNT
     mtsr t0, ie ; enable interrupts
+    ret
+
+set_timer: ; void set_timer(int period, bool repeat, bool enableIrq)
+    slli t0, a1, 3
+    slli a2, a2, 1
+    or t0, t0, a2
+    ori t0, t0, 1
+    neg a0, a0
+    mtio a0, TMRVAL
+    mtio t0, TMRCNT
+    ret
+
+stop_timer:
+    mtio zr, TMRCNT
+    ret
+
+delay:
+    mfio t0, CLK
+    add a0, a0, t0
+.loop:
+    mfio t0, CLK
+    ucmp t0, a0
+    blt .loop
     ret
 
 timer_handler:

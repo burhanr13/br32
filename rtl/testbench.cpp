@@ -1,3 +1,4 @@
+#include <SDL3/SDL.h>
 #include <cstdio>
 
 #include <verilated.h>
@@ -14,6 +15,11 @@ bool debug = false;
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
+
+#define CLK_SPEED 10'000'000
+#define SAMPLE_RATE 32768
+
+SDL_AudioStream* audioStream;
 
 u8 mem[0x10000];
 
@@ -43,6 +49,10 @@ union {
         bool repeat : 1;
     };
 } tmrcnt;
+
+int cur_sample = 0;
+u8 audio_buf[1024];
+int audio_idx;
 
 u32 rio(u16 port) {
     switch (static_cast<IoPort>(port)) {
@@ -80,6 +90,7 @@ void handle_timer() {
             tmrcnt.irqpend = 1;
             if (!tmrcnt.repeat) tmrcnt.ena = 0;
             DEBUG("\ttimer overflowed\n");
+            cur_sample = !cur_sample;
         }
     }
     model.irq = tmrcnt.irqena && tmrcnt.irqpend;
@@ -109,8 +120,8 @@ void dump() {
     }
     DEBUG("\n\t");
     const char* reg_names[] = {
-        "zr", "sp", "a0", "a1", "a2", "a3",  "a4",  "t0",  "t1",  "t2", "t3",
-        "t4", "t5", "t6", "t7", "t8", "t9",  "s0",  "s1",  "s2",  "s3", "s4",
+        "zr", "sp", "a0", "a1", "a2", "a3",  "a4",  "t0",  "t1", "t2", "t3",
+        "t4", "t5", "t6", "t7", "t8", "t9",  "s0",  "s1",  "s2", "s3", "s4",
         "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "fp", "lr"};
     for (int i = 0; i < 32; i++) {
         DEBUG("%s=%x ", reg_names[i], model.core->regs[i]);
@@ -168,6 +179,17 @@ void handle_bus() {
 void step() {
     DEBUG("cycle: %ld\n", cycles);
 
+    if (cycles % (CLK_SPEED / SAMPLE_RATE) == 0) {
+        audio_buf[audio_idx++] = cur_sample ? 0xff : 0;
+        if (audio_idx == sizeof audio_buf / sizeof audio_buf[0]) {
+            audio_idx = 0;
+            SDL_PutAudioStreamData(audioStream, audio_buf, sizeof audio_buf);
+            while (SDL_GetAudioStreamQueued(audioStream) > 10) {
+                SDL_Delay(1);
+            }
+        }
+    }
+
     model.clk = 1;
     model.eval();
     model.rst = 0;
@@ -207,12 +229,22 @@ int main(int argc, char** argv) {
         argv++;
     }
 
+    if (!SDL_Init(SDL_INIT_AUDIO)) printf("audio init failed\n");
+    SDL_AudioSpec as = {
+        .format = SDL_AUDIO_U8, .channels = 1, .freq = SAMPLE_RATE};
+    audioStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+                                            &as, nullptr, nullptr);
+    SDL_ResumeAudioStreamDevice(audioStream);
+
     model.rst = 1;
     model.clk = 0;
     model.eval();
     while (!done) {
         step();
     }
+
+    SDL_DestroyAudioStream(audioStream);
+    SDL_Quit();
 
     return exit_code;
 }
