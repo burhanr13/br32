@@ -9,7 +9,7 @@ ifeq ($(shell uname), Darwin)
 endif
 
 build:
-	verilator $(VERILATOR_ARGS) core.sv testbench.cpp -LDFLAGS $(LDPATH) -LDFLAGS -lSDL3
+	verilator $(VERILATOR_ARGS) core.sv testbench.cpp -LDFLAGS "$(LDPATH) -lSDL3"
 
 clean:
 	rm -rf obj_dir
