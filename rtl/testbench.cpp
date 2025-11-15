@@ -16,7 +16,7 @@ typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
 
-#define CLK_SPEED 10'000'000
+#define CLK_SPEED 1'000'000
 #define SAMPLE_RATE 32768
 
 SDL_AudioStream* audioStream;

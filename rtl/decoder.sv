@@ -2,7 +2,7 @@ import decoder_pkg::*;
 
 module decoder (
     input [31:0] instr,
-    output decoded_t out
+    output decoder_pkg::decoded_t out
 );
     localparam logic [4:0] LR = 31;
 

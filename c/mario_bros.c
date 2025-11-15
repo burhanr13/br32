@@ -1,4 +1,4 @@
-#define F_CPU (10000000)
+#define F_CPU (1000000)
 
 #include <lib.h>
 
@@ -192,7 +192,7 @@ void delayMs(int ms) {
 }
 
 void tone(uint32_t frequency, int duration) {
-    int period = __div(F_CPU, frequency);
+    int period = __div(F_CPU, frequency) >> 1;
     set_timer(period, true, false);
 }
 
@@ -201,19 +201,21 @@ void stopTone() {
 }
 
 int main() {
-    int count = __div(sizeof(melody), sizeof(melody[0]));
-    for (int i = 0; i < count; i++) {
-        int note = melody[i];
-        int duration = durations[i];
-        int ms = __div(1000, duration);
+    while (1) {
+        int count = __div(sizeof(melody), sizeof(melody[0]));
+        for (int i = 0; i < count; i++) {
+            int note = melody[i];
+            int duration = durations[i];
+            int ms = __div(1000, duration);
 
-        if (note != REST) {
-            tone(note, ms);
-        } else {
+            if (note != REST) {
+                tone(note, ms);
+            } else {
+                stopTone();
+            }
+
+            delayMs(ms);
             stopTone();
         }
-
-        delayMs(ms);
-        stopTone();
     }
 }

@@ -21,9 +21,9 @@ module core (
     output [31:0] io_wdata
 );
 
-    reg [31:0] regs[32] /*verilator public*/;
+    reg [31:0] regs[32]  /*verilator public*/;
     assign regs[0] = 0;
-    reg [1:0] cmp_reg /*verilator public*/;
+    reg [1:0] cmp_reg  /*verilator public*/;
 
     wire exn;
     wire eret;
