@@ -16,7 +16,7 @@ typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
 
-#define CLK_SPEED 1'000'000
+#define CLK_SPEED 5'000'000
 #define SAMPLE_RATE 32768
 
 SDL_AudioStream* audioStream;
@@ -184,9 +184,6 @@ void step() {
         if (audio_idx == sizeof audio_buf / sizeof audio_buf[0]) {
             audio_idx = 0;
             SDL_PutAudioStreamData(audioStream, audio_buf, sizeof audio_buf);
-            while (SDL_GetAudioStreamQueued(audioStream) > 10) {
-                SDL_Delay(1);
-            }
         }
     }
 

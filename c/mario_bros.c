@@ -1,4 +1,4 @@
-#define F_CPU (1000000)
+#define F_CPU (5000000)
 
 #include <lib.h>
 

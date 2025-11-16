@@ -5,8 +5,12 @@
 	cd ../asm && customasm .tmp.asm -o $(abspath $@) && rm -rf .tmp.asm
 
 .PRECIOUS: %.asm
-%.asm: %.c chibicc/chibicc
+%.asm: %.c chibicc
 	./chibicc/chibicc -o $@ -Iinclude -S $<
+
+.PHONY: chibicc
+chibicc:
+	make -C chibicc
 
 .PHONY: clean
 clean:
