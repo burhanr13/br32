@@ -202,8 +202,7 @@ void stopTone() {
 
 int main() {
     while (1) {
-        int count = __div(sizeof(melody), sizeof(melody[0]));
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < __div(sizeof(melody), sizeof(melody[0])); i++) {
             int note = melody[i];
             int duration = durations[i];
             int ms = __div(1000, duration);
