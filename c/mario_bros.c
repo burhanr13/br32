@@ -200,7 +200,9 @@ void stopTone() {
 }
 
 int main() {
+    int j = 0;
     while (1) {
+        if (j++ == 100) break;
         for (int i = 0; i < sizeof(melody) / sizeof(melody[0]); i++) {
             int note = melody[i];
             int duration = durations[i];

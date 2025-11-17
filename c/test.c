@@ -1,4 +1,15 @@
 
+void loopy() {
+    do {
+        volatile int a = 5;
+    } while(0);
+
+    while (1) {
+        volatile int b = 6;
+        break;
+    }
+}
+
 void strcpy(char* dst, char* src) {
     while (*src) *dst++ = *src++;
 }
