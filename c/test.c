@@ -1,4 +1,8 @@
 
+void strcpy(char* dst, char* src) {
+    while (*src) *dst++ = *src++;
+}
+
 int ddd(unsigned char* a, signed char* c, unsigned short* b, signed short* d) {
     return *a + *b + *c + *d;
 }
