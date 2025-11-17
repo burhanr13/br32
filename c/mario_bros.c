@@ -188,12 +188,11 @@ int durations[] = {
     4, 4, 4, 8, 8, 8, 8, 8, 8, 8, 8, 2};
 
 void delayMs(int ms) {
-    delay(__mul(__div(F_CPU, 1000), ms));
+    delay(F_CPU / 1000 * ms);
 }
 
 void tone(uint32_t frequency, int duration) {
-    int period = __div(F_CPU, frequency) >> 1;
-    set_timer(period, true, false);
+    set_timer(F_CPU / (2 * frequency), true, false);
 }
 
 void stopTone() {
@@ -202,10 +201,10 @@ void stopTone() {
 
 int main() {
     while (1) {
-        for (int i = 0; i < __div(sizeof(melody), sizeof(melody[0])); i++) {
+        for (int i = 0; i < sizeof(melody) / sizeof(melody[0]); i++) {
             int note = melody[i];
             int duration = durations[i];
-            int ms = __div(1000, duration);
+            int ms = 1000 / duration;
 
             if (note != REST) {
                 tone(note, ms);

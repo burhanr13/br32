@@ -1,5 +1,5 @@
 
-int ddd(unsigned char *a, signed char *c, unsigned short *b, signed short *d) {
+int ddd(unsigned char* a, signed char* c, unsigned short* b, signed short* d) {
     return *a + *b + *c + *d;
 }
 
@@ -9,7 +9,7 @@ int aaa(int a) {
 }
 
 int bbb(int a, int b) {
-    return a + b;
+    return 4 + a + b;
 }
 
 int main() {
@@ -18,4 +18,9 @@ int main() {
 
 int lol() {
     return 5;
+}
+
+int qqq(int b) {
+    if ((b & (1 << 10)) != 0) return 1;
+    return 0;
 }

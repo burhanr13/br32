@@ -6,7 +6,7 @@
 
 .PRECIOUS: %.asm
 %.asm: %.c chibicc
-	./chibicc/chibicc -o $@ -Iinclude -S $<
+	./chibicc/chibicc -o $@ -nostdinc -Iinclude -S $<
 
 .PHONY: chibicc
 chibicc:
