@@ -13,6 +13,7 @@ typedef unsigned int uint32_t;
 
 int __mul(int a, int b);
 int __div(int a, int b);
+int __mod(int a, int b);
 
 int printf(const char* fmt, ...);
 

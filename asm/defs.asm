@@ -83,6 +83,15 @@ __div:
     movlt a1, a2
     ret
 
+__mod:
+    stw lr, -4(sp)
+    subi sp, sp, 4
+    jl __div
+    mov a0, a1
+    addi sp, sp, 4
+    ldw lr, -4(sp)
+    ret
+
 puts:
     ldb t0, (a0)
     tst t0, t0
