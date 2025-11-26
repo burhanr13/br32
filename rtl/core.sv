@@ -22,7 +22,6 @@ module core (
 );
 
     reg [31:0] regs[32]  /*verilator public*/;
-    assign regs[0] = 0;
     reg [1:0] cmp_reg  /*verilator public*/;
 
     wire exn;

@@ -1,6 +1,7 @@
 obj_dir
 *.bin
 c/*.asm
+c/*.ir
 
 log*
 
@@ -8,5 +9,6 @@ log*
 .cache
 compile_commands.json
 
-xsim*
-br32.*
+*.gprj*
+impl
+

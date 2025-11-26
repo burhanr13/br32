@@ -1,6 +1,7 @@
 
 module stage_wb (
     input clk,
+    input rst,
     wb_out_if.master WB,
     mem_out_if.other MEM,
     output reg [31:0] regs[32],
@@ -24,8 +25,11 @@ module stage_wb (
 
         bubble <= MEM.bubble;
 
-        if (!WB.bubble && w_rd) regs[WB.rd] <= WB.res;
-        if (MEM.w_cr) cmp_reg <= MEM.cmp_res;
+        if (rst) regs[0] <= 0;
+        else begin
+            if (!WB.bubble && w_rd) regs[WB.rd] <= WB.res;
+            if (MEM.w_cr) cmp_reg <= MEM.cmp_res;
+        end
     end
 
 endmodule

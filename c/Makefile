@@ -8,6 +8,9 @@
 %.asm: %.c chibicc
 	./chibicc/chibicc -o $@ -nostdinc -Iinclude -S $<
 
+%.ir: %.c chibicc
+	./chibicc/chibicc -o $@ -nostdinc -Iinclude -S -emit-ir $<
+
 .PHONY: chibicc
 chibicc:
 	make -C chibicc

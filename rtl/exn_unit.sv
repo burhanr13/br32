@@ -40,9 +40,9 @@ module exn_unit (
     assign elr = saved_pc;
     assign scr = saved_cr;
 
-    always_comb begin
-        automatic logic true_ie = (MEM.mtsr && MEM.alu_res == SR_IE) ? MEM.op3[0] : ie;
+    wire true_ie = (MEM.mtsr && MEM.alu_res == SR_IE) ? MEM.op3[0] : ie;
 
+    always_comb begin
         exn = 0;
         save_exn_info = 0;
         eret = 0;

@@ -9,6 +9,11 @@ module decoder (
     always_comb begin
         automatic logic high_imm = 0;
         automatic logic sx_imm = 0;
+        automatic logic [4:0] opc_ri = instr[10:6];
+        automatic logic [5:0] opc_rrii = instr[31:26];
+        automatic logic [4:0] opc_special = instr[15:11];
+        automatic logic [10:0] opc_rrr = instr[31:21];
+        automatic logic is_cmp = 0, is_cond = 0;
 
         out = '0;
 
@@ -66,32 +71,29 @@ module decoder (
                         out.w_rd = 1;
                     end
                     8: begin
-                        automatic logic [4:0] opc = instr[10:6];
-                        if (opc[4]) begin
+                        if (opc_ri[4]) begin
                             out.branch = 1;
                             out.branch_op1 = 1;
                             out.r_rs1 = 1;
-                            out.link = opc[0];
+                            out.link = opc_ri[0];
                         end else begin
-                            out.alu_opc = {3'b100, opc[2:0]};
-                            high_imm = opc[3];
+                            out.alu_opc = {3'b100, opc_ri[2:0]};
+                            high_imm = opc_ri[3];
                             out.op2_imm = 1;
                             out.r_rs1 = 1;
                             out.w_cr = 1;
                         end
                     end
                     9: begin
-                        automatic logic [5:0] opc = instr[31:26];
-                        out.alu_opc = {4'b0100, opc[3:2]};
+                        out.alu_opc = {4'b0100, opc_rrii[3:2]};
                         out.op2_imm = 1;
                         out.r_rs1 = 1;
                         out.w_rd = 1;
                     end
                     'hd: begin
-                        automatic logic [4:0] opc = instr[15:11];
                         out.op1_0   = 1;
                         out.op2_imm = 1;
-                        case (opc)
+                        case (opc_special)
                             0: begin
                                 out.scall = 1;
                             end
@@ -119,25 +121,24 @@ module decoder (
                         endcase
                     end
                     'he: begin
-                        automatic logic [10:0] opc = instr[31:21];
-                        if (opc[10:6] == 0) begin
-                            automatic logic is_cmp = opc[5:4] == 2;
-                            automatic logic is_cond = opc[5:4] == 3;
-                            out.alu_opc = opc[5:0];
+                        if (opc_rrr[10:6] == 0) begin
+                            is_cmp = opc_rrr[5:4] == 2;
+                            is_cond = opc_rrr[5:4] == 3;
+                            out.alu_opc = opc_rrr[5:0];
                             out.r_rs1 = 1;
                             out.r_rs2 = 1;
                             out.w_rd = !is_cmp;
                             out.w_cr = is_cmp;
-                            out.cond_code = opc[2:0];
+                            out.cond_code = opc_rrr[2:0];
                             out.r_cr = is_cond;
-                        end else if (opc[10:6] == 'h1f) begin
+                        end else if (opc_rrr[10:6] == 'h1f) begin
                             out.r_rs1 = 1;
                             out.r_rs2 = 1;
-                            out.mem_sz = opc[3:2];
-                            out.mem_sx = opc[0];
-                            out.op2_shift = opc[4];
-                            out.mem_r = !opc[1];
-                            out.mem_w = opc[1] && !opc[0];
+                            out.mem_sz = opc_rrr[3:2];
+                            out.mem_sx = opc_rrr[0];
+                            out.op2_shift = opc_rrr[4];
+                            out.mem_r = !opc_rrr[1];
+                            out.mem_w = opc_rrr[1] && !opc_rrr[0];
                             out.w_rd = !out.mem_w;
                             out.r_rs3 = out.mem_w;
                         end else out.udf = 1;

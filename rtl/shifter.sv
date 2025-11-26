@@ -6,12 +6,15 @@ module shifter (
     input sx,
     output logic [31:0] out
 );
+
+    wire [31:0] ones = '1;
+    wire [31:0] mask = ones >> maskbits;
+    wire [4:0] sh_n = -sh;
+    logic [31:0] mask_r;
+
     always_comb begin
-        automatic logic [31:0] ones = '1;
-        automatic logic [31:0] mask = ones >> maskbits;
-        automatic logic [ 4:0] sh_n = -sh;
-        automatic logic [31:0] mask_r;
         for (int i = 0; i < 32; i++) mask_r[i] = mask[31-i];
+
         out = op >> (left ? sh_n : sh) | op << (left ? sh : sh_n);
         out &= left ? mask_r : mask;
         if (sx && out[~maskbits]) out |= ~mask;
