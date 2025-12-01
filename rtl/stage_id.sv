@@ -15,38 +15,36 @@ module stage_id (
     reg [31:0] instr;
     reg bubble  /*verilator public*/;
 
-    wire decoded_t dec;
+    decoded_t dec;
     decoder d (
         .instr,
         .out(dec)
     );
 
+    function automatic [31:0] read_reg(logic [4:0] rn, logic r_rn, inout logic stall);
+        if (rn == 0) read_reg = 0;
+        else if (EX.w_rd && rn == EX.rd) begin
+            if (r_rn && EX.res_in_mem) begin
+                stall |= 1;
+                read_reg = 0;
+            end else read_reg = EX.alu_res;
+        end else if (MEM.w_rd && rn == MEM.rd) read_reg = MEM.res;
+        else if (WB.w_rd && rn == WB.rd) read_reg = WB.res;
+        else read_reg = regs[rn];
+    endfunction
+
     always_comb begin
-        automatic logic stall = 0;
+        automatic logic stall = EX.stall;
         logic [1:0] cr_val;
 
         ID.dec = dec;
 
         if (dec.op1_0) ID.op1 = 0;
         else if (dec.op1_pc) ID.op1 = ID.pc;
-        else if (EX.w_rd && dec.rs1 == EX.rd) begin
-            if ((EX.mem_r || EX.io_r || EX.mfcr || EX.mfsr) && dec.r_rs1) begin
-                stall  = 1;
-                ID.op1 = 0;
-            end else ID.op1 = EX.alu_res;
-        end else if (MEM.w_rd && dec.rs1 == MEM.rd) ID.op1 = MEM.res;
-        else if (WB.w_rd && dec.rs1 == WB.rd) ID.op1 = WB.res;
-        else ID.op1 = regs[dec.rs1];
+        else ID.op1 = read_reg(dec.rs1, dec.r_rs1, stall);
 
         if (dec.op2_imm) ID.op2 = dec.imm;
-        else if (EX.w_rd && dec.rs2 == EX.rd) begin
-            if ((EX.mem_r || EX.io_r) && dec.r_rs2) begin
-                stall  = 1;
-                ID.op2 = 0;
-            end else ID.op2 = EX.alu_res;
-        end else if (MEM.w_rd && dec.rs2 == MEM.rd) ID.op2 = MEM.res;
-        else if (WB.w_rd && dec.rs2 == WB.rd) ID.op2 = WB.res;
-        else ID.op2 = regs[dec.rs2];
+        else ID.op2 = read_reg(dec.rs2, dec.r_rs2, stall);
 
         if (EX.w_cr) cr_val = EX.cmp_res;
         else if (MEM.w_cr) cr_val = MEM.cmp_res;
@@ -54,7 +52,7 @@ module stage_id (
 
         ID.cond_true = !dec.r_cr || ((dec.cond_code[2:1] == cr_val) ^ dec.cond_code[0]);
 
-        ID.branch = dec.branch && ID.cond_true && !bubble;
+        ID.branch = dec.branch && ID.cond_true && !bubble && !stall;
         ID.branch_dest = dec.branch_op1 ? {ID.op1[31:2], 2'b0} : ID.pc + dec.branch_off;
 
         ID.stall = stall && !bubble;
@@ -64,8 +62,9 @@ module stage_id (
     always_ff @(posedge clk) begin
         if (!ID.stall || exn) begin
             ID.pc <= IF.pc;
-            ID.nextpc <= IF.nextpc;
+            ID.nextpc <= IF.stall ? IF.pc : IF.nextpc;
             instr <= IF.instr;
+
             bubble <= IF.bubble || exn;
         end
     end

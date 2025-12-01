@@ -4,8 +4,8 @@ interface if_out_if;
 
     logic [31:0] instr;
 
-    logic bubble;
+    logic bubble, stall;
 
-    modport master(output pc, nextpc, instr, bubble);
-    modport other(input pc, nextpc, instr, bubble);
+    modport master(output pc, nextpc, instr, bubble, stall);
+    modport other(input pc, nextpc, instr, bubble, stall);
 endinterface

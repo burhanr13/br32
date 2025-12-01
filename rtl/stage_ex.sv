@@ -38,6 +38,8 @@ module stage_ex (
     );
 
     always_comb begin
+        automatic logic stall = MEM.stall;
+
         if (MEM.w_rd && rs3 == MEM.rd) EX.op3 = MEM.res;
         else if (WB.w_rd && rs3 == WB.rd) EX.op3 = WB.res;
         else EX.op3 = regs[rs3];
@@ -51,40 +53,45 @@ module stage_ex (
         EX.cmp_res = mtcr ? EX.op3[1:0] : cmp_res;
         EX.w_cr = w_cr && !bubble;
 
-        EX.bubble = bubble;
+        EX.res_in_mem = EX.mem_r || EX.io_r || EX.mfcr || EX.mfsr;
+
+        EX.stall = stall && !bubble;
+        EX.bubble = bubble || EX.stall;
     end
 
     always_ff @(posedge clk) begin
-        EX.pc <= ID.pc;
-        EX.nextpc <= ID.stall ? ID.pc : ID.nextpc;
-        op1 <= ID.op1;
-        op2 <= ID.op2;
-        alu_opc <= ID.dec.alu_opc;
-        op2_imm <= ID.dec.op2_imm;
-        cond_true <= ID.cond_true;
-        rs3 <= ID.dec.rs3;
-        r_rs3 <= ID.dec.r_rs3;
-        w_rd <= ID.dec.w_rd;
-        EX.rd <= ID.dec.rd;
-        r_cr <= ID.dec.r_cr;
-        w_cr <= ID.dec.w_cr;
-        EX.link <= ID.dec.link;
-        EX.mem_r <= ID.dec.mem_r;
-        EX.mem_w <= ID.dec.mem_w;
-        EX.mem_sz <= ID.dec.mem_sz;
-        op2_shift <= ID.dec.op2_shift;
-        EX.mem_sx <= ID.dec.mem_sx;
-        EX.io_r <= ID.dec.io_r;
-        EX.io_w <= ID.dec.io_w;
-        EX.mfsr <= ID.dec.mfsr;
-        EX.mtsr <= ID.dec.mtsr;
-        EX.mfcr <= ID.dec.mfcr;
-        mtcr <= ID.dec.mtcr;
-        EX.scall <= ID.dec.scall;
-        EX.eret <= ID.dec.eret;
-        EX.udf <= ID.dec.udf;
+        if (!EX.stall || exn) begin
+            EX.pc <= ID.pc;
+            EX.nextpc <= ID.stall ? ID.pc : ID.nextpc;
+            op1 <= ID.op1;
+            op2 <= ID.op2;
+            alu_opc <= ID.dec.alu_opc;
+            op2_imm <= ID.dec.op2_imm;
+            cond_true <= ID.cond_true;
+            rs3 <= ID.dec.rs3;
+            r_rs3 <= ID.dec.r_rs3;
+            w_rd <= ID.dec.w_rd;
+            EX.rd <= ID.dec.rd;
+            r_cr <= ID.dec.r_cr;
+            w_cr <= ID.dec.w_cr;
+            EX.link <= ID.dec.link;
+            EX.mem_r <= ID.dec.mem_r;
+            EX.mem_w <= ID.dec.mem_w;
+            EX.mem_sz <= ID.dec.mem_sz;
+            op2_shift <= ID.dec.op2_shift;
+            EX.mem_sx <= ID.dec.mem_sx;
+            EX.io_r <= ID.dec.io_r;
+            EX.io_w <= ID.dec.io_w;
+            EX.mfsr <= ID.dec.mfsr;
+            EX.mtsr <= ID.dec.mtsr;
+            EX.mfcr <= ID.dec.mfcr;
+            mtcr <= ID.dec.mtcr;
+            EX.scall <= ID.dec.scall;
+            EX.eret <= ID.dec.eret;
+            EX.udf <= ID.dec.udf;
 
-        bubble <= ID.bubble || exn;
+            bubble <= ID.bubble || exn;
+        end
     end
 
 endmodule

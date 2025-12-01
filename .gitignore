@@ -1,5 +1,6 @@
 obj_dir
 *.bin
+asm/*.txt
 c/*.asm
 c/*.ir
 
@@ -11,4 +12,6 @@ compile_commands.json
 
 *.gprj*
 impl
+
+*.vcd
 

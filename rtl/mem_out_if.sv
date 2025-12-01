@@ -15,14 +15,14 @@ interface mem_out_if;
 
     logic scall, eret, udf;
 
-    logic bubble;
+    logic bubble, stall;
 
     modport master(
         output pc,nextpc,res,rd,w_rd,cmp_res,
-        w_cr,op3,alu_res,mtsr,scall,eret,udf,bubble
+        w_cr,op3,alu_res,mtsr,scall,eret,udf,bubble,stall
     );
     modport other(
         input pc,nextpc,res,rd,w_rd,cmp_res,
-        w_cr,op3,alu_res,mtsr,scall,eret,udf,bubble
+        w_cr,op3,alu_res,mtsr,scall,eret,udf,bubble,stall
     );
 endinterface

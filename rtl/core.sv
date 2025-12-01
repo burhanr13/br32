@@ -6,13 +6,12 @@ module core (
 
     output mem_r,
     output mem_w,
+    output fetch,
     output [1:0] mem_sz,
     output [31:0] mem_addr,
     input [31:0] mem_rdata,
     output [31:0] mem_wdata,
-
-    output [31:0] iaddr,
-    input  [31:0] idata,
+    input mem_busy,
 
     output io_r,
     output io_w,
@@ -39,6 +38,20 @@ module core (
 
     wire [31:0] sr_rdata;
 
+    wire [31:0] instr_addr;
+    wire [31:0] instr_data;
+    wire instr_busy;
+
+    wire data_r;
+    wire data_w;
+    wire [1:0] data_sz;
+    wire [31:0] data_addr;
+    wire [31:0] data_rdata;
+    wire [31:0] data_wdata;
+    wire data_busy;
+
+    arbiter a (.*);
+
     exn_unit e (.*);
 
     stage_if s_if (.*);
@@ -48,11 +61,8 @@ module core (
     stage_ex s_ex (.*);
 
     stage_mem s_mem (
-        .mem_r_o (mem_r),
-        .mem_w_o (mem_w),
-        .mem_sz_o(mem_sz),
-        .io_r_o  (io_r),
-        .io_w_o  (io_w),
+        .io_r_o(io_r),
+        .io_w_o(io_w),
         .*
     );
 

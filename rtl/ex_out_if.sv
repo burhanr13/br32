@@ -22,20 +22,22 @@ interface ex_out_if;
     logic mfsr, mtsr;
     logic mfcr;
 
+    logic res_in_mem;
+
     logic scall, eret, udf;
 
-    logic bubble;
+    logic bubble, stall;
 
     modport master(
         output pc,nextpc,
         alu_res,cmp_res,op3,
         rd,w_rd,w_cr,link,mem_r,mem_w,mem_sz,
-        mem_sx,io_r,io_w,mfsr,mtsr,mfcr,scall,
-        eret,udf,bubble
+        mem_sx,io_r,io_w,mfsr,mtsr,mfcr,res_in_mem,scall,
+        eret,udf,bubble,stall
     );
     modport other(
         input pc,nextpc, alu_res,cmp_res,op3,
         rd,w_rd,w_cr,link,mem_r,mem_w,mem_sz,mem_sx,io_r,io_w,
-        mfsr,mtsr,mfcr,scall,eret,udf,bubble
+        mfsr,mtsr,mfcr,res_in_mem,scall,eret,udf,bubble,stall
     );
 endinterface

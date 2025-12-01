@@ -3,6 +3,7 @@
 
 #include <verilated.h>
 
+#include "Vcore.h"
 #include "Vcore__Syms.h"
 
 bool debug = false;
@@ -90,7 +91,7 @@ void handle_timer() {
             tmrcnt.irqpend = 1;
             if (!tmrcnt.repeat) tmrcnt.ena = 0;
             DEBUG("\ttimer overflowed\n");
-            cur_sample = !cur_sample;
+            // cur_sample = !cur_sample;
         }
     }
     model.irq = tmrcnt.irqena && tmrcnt.irqpend;
@@ -147,26 +148,44 @@ void dump() {
     // VL_TO_STRING(model.rootp->core__DOT__wb_out).c_str());
 }
 
-void handle_bus() {
-    model.idata = *(u32*) &mem[model.iaddr];
-    DEBUG("\tfetch [%x]=%08x\n", model.iaddr, model.idata);
-    if (model.mem_r) {
-        switch (model.mem_sz) {
-            case 0: model.mem_rdata = *(u8*) &mem[model.mem_addr]; break;
-            case 1: model.mem_rdata = *(u16*) &mem[model.mem_addr]; break;
-            case 2: model.mem_rdata = *(u32*) &mem[model.mem_addr]; break;
+void handle_mem() {
+    static u32 next_rdata;
+    if (model.clk) {
+        if (model.mem_r) {
+            switch (model.mem_sz) {
+                case 0:
+                    next_rdata = *(u8*) &mem[model.mem_addr % sizeof mem];
+                    break;
+                case 1:
+                    next_rdata = *(u16*) &mem[model.mem_addr % sizeof mem];
+                    break;
+                case 2:
+                    next_rdata = *(u32*) &mem[model.mem_addr % sizeof mem];
+                    break;
+            }
+            DEBUG("\tmem %s %d [%x]=%x\n", model.fetch ? "fetch" : "read",
+                  8 << model.mem_sz, model.mem_addr, next_rdata);
+        } else if (model.mem_w) {
+            switch (model.mem_sz) {
+                case 0:
+                    *(u8*) &mem[model.mem_addr % sizeof mem] = model.mem_wdata;
+                    break;
+                case 1:
+                    *(u16*) &mem[model.mem_addr % sizeof mem] = model.mem_wdata;
+                    break;
+                case 2:
+                    *(u32*) &mem[model.mem_addr % sizeof mem] = model.mem_wdata;
+                    break;
+            }
+            DEBUG("\tmem write %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
+                  model.mem_wdata);
         }
-        DEBUG("\tmem read %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
-              model.mem_rdata);
-    } else if (model.mem_w) {
-        switch (model.mem_sz) {
-            case 0: *(u8*) &mem[model.mem_addr] = model.mem_wdata; break;
-            case 1: *(u16*) &mem[model.mem_addr] = model.mem_wdata; break;
-            case 2: *(u32*) &mem[model.mem_addr] = model.mem_wdata; break;
-        }
-        DEBUG("\tmem write %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
-              model.mem_wdata);
+    } else {
+        model.mem_rdata = next_rdata;
     }
+}
+
+void handle_io() {
     if (model.io_r) {
         model.io_rdata = rio(model.io_addr);
         DEBUG("\tio read [%x]=%x\n", model.io_addr, model.io_rdata);
@@ -174,29 +193,32 @@ void handle_bus() {
         wio(model.io_addr, model.io_wdata);
         DEBUG("\tio write [%x]=%x\n", model.io_addr, model.io_wdata);
     }
+    handle_timer();
 }
 
 void step() {
     DEBUG("cycle: %ld\n", cycles);
 
-    if (cycles % (CLK_SPEED / SAMPLE_RATE) == 0) {
-        audio_buf[audio_idx++] = cur_sample ? 0xff : 0;
-        if (audio_idx == sizeof audio_buf / sizeof audio_buf[0]) {
-            audio_idx = 0;
-            SDL_PutAudioStreamData(audioStream, audio_buf, sizeof audio_buf);
-        }
-    }
+    // if (cycles % (CLK_SPEED / SAMPLE_RATE) == 0) {
+    //     audio_buf[audio_idx++] = cur_sample ? 0xff : 0;
+    //     if (audio_idx == sizeof audio_buf / sizeof audio_buf[0]) {
+    //         audio_idx = 0;
+    //         SDL_PutAudioStreamData(audioStream, audio_buf, sizeof audio_buf);
+    //     }
+    // }
 
     model.clk = 1;
+    handle_mem();
+    model.eval();
+    Verilated::timeInc(5);
+    model.clk = 0;
+    handle_mem();
+    handle_io();
     model.eval();
     model.rst = 0;
-    model.clk = 0;
-    model.eval();
+    Verilated::timeInc(5);
 
     dump();
-
-    handle_bus();
-    handle_timer();
 
     cycles++;
 }
@@ -226,22 +248,27 @@ int main(int argc, char** argv) {
         argv++;
     }
 
-    if (!SDL_Init(SDL_INIT_AUDIO)) printf("audio init failed\n");
-    SDL_AudioSpec as = {
-        .format = SDL_AUDIO_U8, .channels = 1, .freq = SAMPLE_RATE};
-    audioStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-                                            &as, nullptr, nullptr);
-    SDL_ResumeAudioStreamDevice(audioStream);
+    Verilated::traceEverOn(true);
+
+    // if (!SDL_Init(SDL_INIT_AUDIO)) printf("audio init failed\n");
+    // SDL_AudioSpec as = {
+    //     .format = SDL_AUDIO_U8, .channels = 1, .freq = SAMPLE_RATE};
+    // audioStream =
+    // SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+    //                                         &as, nullptr, nullptr);
+    // SDL_ResumeAudioStreamDevice(audioStream);
 
     model.rst = 1;
     model.clk = 0;
     model.eval();
+    Verilated::timeInc(5);
+
     while (!done) {
         step();
     }
 
-    SDL_DestroyAudioStream(audioStream);
-    SDL_Quit();
+    // SDL_DestroyAudioStream(audioStream);
+    // SDL_Quit();
 
     return exit_code;
 }

@@ -1,7 +1,7 @@
 
 .PHONY: build, clean
 
-VERILATOR_ARGS := --exe --cc --build -Wall -Wno-unusedsignal -Wno-importstar
+VERILATOR_ARGS := --exe --cc --build -Wall -Wno-unusedsignal -Wno-importstar --trace
 
 LDPATH :=
 ifeq ($(shell uname), Darwin)

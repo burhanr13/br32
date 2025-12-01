@@ -25,11 +25,8 @@ module stage_wb (
 
         bubble <= MEM.bubble;
 
-        if (rst) regs[0] <= 0;
-        else begin
-            if (!WB.bubble && w_rd) regs[WB.rd] <= WB.res;
-            if (MEM.w_cr) cmp_reg <= MEM.cmp_res;
-        end
+        if (!WB.bubble && w_rd) regs[WB.rd] <= WB.res;
+        if (MEM.w_cr) cmp_reg <= MEM.cmp_res;
     end
 
 endmodule
