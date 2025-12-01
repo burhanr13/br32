@@ -10,8 +10,8 @@ module stage_if #(
     input [31:0] elr,
 
     if_out_if.master IF,
-    id_out_if.other ID,
-    ex_out_if.other EX,
+    id_out_if.other  ID,
+    ex_out_if.other  EX,
 
     output reg [31:0] instr_addr,
     input [31:0] instr_data,
@@ -23,6 +23,7 @@ module stage_if #(
     always_comb begin
         IF.pc = pc;
         IF.instr = instr_data;
+
         if (exn) begin
             if (eret) IF.nextpc = elr;
             else IF.nextpc = {RESET_VEC[31:8], exn_type, 2'b0};
@@ -30,8 +31,8 @@ module stage_if #(
         else if (!instr_busy) IF.nextpc = pc + 4;
         else IF.nextpc = pc;
 
-        IF.stall = ID.stall || (instr_busy && !ID.branch && !exn);
-        IF.bubble = ID.branch || IF.stall;
+        IF.stall   = ID.stall || instr_busy;
+        IF.bubble  = ID.branch || IF.stall;
 
         instr_addr = IF.nextpc;
     end

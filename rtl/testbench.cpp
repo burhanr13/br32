@@ -99,10 +99,12 @@ void handle_timer() {
 
 void dump() {
     DEBUG("\tpipe: IF:%x ", model.core->IF->pc);
+    DEBUG("%x ", model.mem_rdata);
     if (model.core->s_id->bubble) {
         DEBUG("ID:(%x) ", model.core->ID->__PVT__nextpc);
     } else {
         DEBUG("ID:%x ", model.core->ID->pc);
+        DEBUG("%x ", model.core->s_id->__PVT__instr);
     }
     if (model.core->s_ex->bubble) {
         DEBUG("EX:(%x) ", model.core->EX->__PVT__nextpc);
