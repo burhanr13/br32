@@ -18,13 +18,12 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 
 #define CLK_SPEED 5'000'000
-#define SAMPLE_RATE 32768
+#define SAMPLE_RATE m
 
 SDL_AudioStream* audioStream;
 
-u8 mem[0x10000];
-
-Vtop model;
+Vtop* model;
+Vtop_top* top;
 
 long cycles = 0;
 
@@ -95,30 +94,30 @@ void handle_timer() {
             // cur_sample = !cur_sample;
         }
     }
-    model.top->irq = tmrcnt.irqena && tmrcnt.irqpend;
+    top->irq = tmrcnt.irqena && tmrcnt.irqpend;
 }
 
 void dump() {
-    DEBUG("\tpipe: IF:%x ", model.top->core0->IF->pc);
-    if (model.top->core0->s_id->bubble) {
-        DEBUG("ID:(%x) ", model.top->core0->ID->__PVT__nextpc);
+    DEBUG("\tpipe: IF:%x ", top->core0->IF->pc);
+    if (top->core0->s_id->bubble) {
+        DEBUG("ID:(%x) ", top->core0->ID->__PVT__nextpc);
     } else {
-        DEBUG("ID:%x ", model.top->core0->ID->pc);
+        DEBUG("ID:%x ", top->core0->ID->pc);
     }
-    if (model.top->core0->s_ex->bubble) {
-        DEBUG("EX:(%x) ", model.top->core0->EX->__PVT__nextpc);
+    if (top->core0->s_ex->bubble) {
+        DEBUG("EX:(%x) ", top->core0->EX->__PVT__nextpc);
     } else {
-        DEBUG("EX:%x ", model.top->core0->EX->pc);
+        DEBUG("EX:%x ", top->core0->EX->pc);
     }
-    if (model.top->core0->s_mem->bubble) {
-        DEBUG("MEM:(%x) ", model.top->core0->MEM->__PVT__nextpc);
+    if (top->core0->s_mem->bubble) {
+        DEBUG("MEM:(%x) ", top->core0->MEM->__PVT__nextpc);
     } else {
-        DEBUG("MEM:%x ", model.top->core0->MEM->pc);
+        DEBUG("MEM:%x ", top->core0->MEM->pc);
     }
-    if (model.top->core0->s_wb->bubble) {
+    if (top->core0->s_wb->bubble) {
         DEBUG("WB:() ");
     } else {
-        DEBUG("WB:%x ", model.top->core0->WB->pc);
+        DEBUG("WB:%x ", top->core0->WB->pc);
     }
     DEBUG("\n\t");
     const char* reg_names[] = {
@@ -126,75 +125,70 @@ void dump() {
         "t4", "t5", "t6", "t7", "t8", "t9",  "s0",  "s1",  "s2", "s3", "s4",
         "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "fp", "lr"};
     for (int i = 0; i < 32; i++) {
-        DEBUG("%s=%x ", reg_names[i], model.top->core0->regs[i]);
+        DEBUG("%s=%x ", reg_names[i], top->core0->regs[i]);
         if (i % 8 == 7) DEBUG("\n\t");
     }
     const char* conditions[4] = {"GT", "EQ", "LT", "??"};
-    DEBUG("cr=%s\n", conditions[model.top->core0->cmp_reg]);
-    DEBUG("\tie=%x sie=%x scr=%s elr=%x einfo=%x\n", model.top->core0->e->ie,
-          model.top->core0->e->saved_ie,
-          conditions[model.top->core0->e->saved_cr],
-          model.top->core0->e->saved_pc, model.top->core0->e->exn_info);
+    DEBUG("cr=%s\n", conditions[top->core0->cmp_reg]);
+    DEBUG("\tie=%x sie=%x scr=%s elr=%x einfo=%x\n", top->core0->e->ie,
+          top->core0->e->saved_ie, conditions[top->core0->e->saved_cr],
+          top->core0->e->saved_pc, top->core0->e->exn_info);
 
-    DEBUG("\tirq=%d\n", model.top->irq);
+    DEBUG("\tirq=%d\n", top->irq);
 
     // DEBUG("\tIF=%s\n",
-    // VL_TO_STRING(model.rootp->core__DOT__if_out).c_str());
+    // VL_TO_STRING(top.rootp->core__DOT__if_out).c_str());
     // DEBUG("\tID=%s\n",
-    // VL_TO_STRING(model.rootp->core__DOT__id_out).c_str());
+    // VL_TO_STRING(top.rootp->core__DOT__id_out).c_str());
     // DEBUG("\tEX=%s\n",
-    // VL_TO_STRING(model.rootp->core__DOT__ex_out).c_str());
+    // VL_TO_STRING(top.rootp->core__DOT__ex_out).c_str());
     // DEBUG("\tMEM=%s\n",
-    // VL_TO_STRING(model.rootp->core__DOT__mem_out).c_str());
+    // VL_TO_STRING(top.rootp->core__DOT__mem_out).c_str());
     // DEBUG("\tWB=%s\n",
-    // VL_TO_STRING(model.rootp->core__DOT__wb_out).c_str());
+    // VL_TO_STRING(top.rootp->core__DOT__wb_out).c_str());
 }
 
 void handle_mem() {
     // static u32 next_rdata;
-    // if (model.clk) {
-    //     if (model.mem_r) {
-    //         switch (model.mem_sz) {
+    // if (model->clk) {
+    //     if (top->mem_r) {
+    //         next_rdata = *(u32*) &top->mem.m_storage[(top->mem_addr & ~3) %
+    //                                                  sizeof top->mem.m_storage];
+    //         DEBUG("\tmem %s %d [%x]=%x\n", top->fetch ? "fetch" : "read",
+    //               8 << top->mem_sz, top->mem_addr, next_rdata);
+    //     } else if (top->mem_w) {
+    //         switch (top->mem_sz) {
     //             case 0:
-    //                 next_rdata = *(u8*) &mem[model.mem_addr % sizeof mem];
+    //                 *(u8*) &top->mem
+    //                      .m_storage[top->mem_addr % sizeof top->mem.m_storage] =
+    //                     top->mem_wdata;
     //                 break;
     //             case 1:
-    //                 next_rdata = *(u16*) &mem[model.mem_addr % sizeof mem];
+    //                 *(u16*) &top->mem
+    //                      .m_storage[top->mem_addr % sizeof top->mem.m_storage] =
+    //                     top->mem_wdata;
     //                 break;
     //             case 2:
-    //                 next_rdata = *(u32*) &mem[model.mem_addr % sizeof mem];
+    //                 *(u32*) &top->mem
+    //                      .m_storage[top->mem_addr % sizeof top->mem.m_storage] =
+    //                     top->mem_wdata;
     //                 break;
     //         }
-    //         DEBUG("\tmem %s %d [%x]=%x\n", model.fetch ? "fetch" : "read",
-    //               8 << model.mem_sz, model.mem_addr, next_rdata);
-    //     } else if (model.mem_w) {
-    //         switch (model.mem_sz) {
-    //             case 0:
-    //                 *(u8*) &mem[model.mem_addr % sizeof mem] =
-    //                 model.mem_wdata; break;
-    //             case 1:
-    //                 *(u16*) &mem[model.mem_addr % sizeof mem] =
-    //                 model.mem_wdata; break;
-    //             case 2:
-    //                 *(u32*) &mem[model.mem_addr % sizeof mem] =
-    //                 model.mem_wdata; break;
-    //         }
-    //         DEBUG("\tmem write %d [%x]=%x\n", 8 << model.mem_sz,
-    //         model.mem_addr,
-    //               model.mem_wdata);
+    //         DEBUG("\tmem write %d [%x]=%x\n", 8 << top->mem_sz, top->mem_addr,
+    //               top->mem_wdata);
     //     }
     // } else {
-    //     model.mem_rdata = next_rdata;
+    //     top->mem_rdata = next_rdata;
     // }
 }
 
 void handle_io() {
-    if (model.top->io_r) {
-        rio(model.top->io_addr, model.top->io_rdata);
-        DEBUG("\tio read [%x]=%x\n", model.top->io_addr, model.top->io_rdata);
-    } else if (model.top->io_w) {
-        wio(model.top->io_addr, model.top->io_wdata);
-        DEBUG("\tio write [%x]=%x\n", model.top->io_addr, model.top->io_wdata);
+    if (top->io_r) {
+        rio(top->io_addr, top->io_rdata);
+        DEBUG("\tio read [%x]=%x\n", top->io_addr, top->io_rdata);
+    } else if (top->io_w) {
+        wio(top->io_addr, top->io_wdata);
+        DEBUG("\tio write [%x]=%x\n", top->io_addr, top->io_wdata);
     }
     handle_timer();
 }
@@ -210,15 +204,15 @@ void step() {
     //     }
     // }
 
-    model.clk = 1;
+    model->clk = 1;
     handle_mem();
-    model.eval();
+    model->eval();
     Verilated::timeInc(5);
-    model.clk = 0;
+    model->clk = 0;
     handle_mem();
     handle_io();
-    model.eval();
-    model.rstn = 1;
+    model->eval();
+    model->rstn = 1;
     Verilated::timeInc(5);
 
     dump();
@@ -227,6 +221,9 @@ void step() {
 }
 
 int main(int argc, char** argv) {
+    auto modelp = std::make_unique<Vtop>();
+    model = modelp.get();
+    top = model->top;
 
     argc--;
     argv++;
@@ -240,7 +237,7 @@ int main(int argc, char** argv) {
         } else {
             FILE* fp = fopen(*argv, "rb");
             if (fp) {
-                fread(model.top->mem.data(), 1, sizeof(mem), fp);
+                fread(top->mem.m_storage, 1, sizeof top->mem.m_storage, fp);
                 fclose(fp);
             } else {
                 perror("fopen");
@@ -261,9 +258,9 @@ int main(int argc, char** argv) {
     //                                         &as, nullptr, nullptr);
     // SDL_ResumeAudioStreamDevice(audioStream);
 
-    model.rstn = 0;
-    model.clk = 0;
-    model.eval();
+    model->rstn = 0;
+    model->clk = 0;
+    model->eval();
     Verilated::timeInc(5);
 
     while (!done) {

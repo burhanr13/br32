@@ -34,8 +34,10 @@ module stage_id (
     endfunction
 
     always_comb begin
-        automatic logic stall = EX.stall;
+        automatic logic stall;
         logic [1:0] cr_val;
+
+        stall = EX.stall;
 
         ID.dec = dec;
 

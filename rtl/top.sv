@@ -10,32 +10,38 @@ module top (
     wire rst = !rstn;
     wire irq  /*verilator public */ = 0;
 
-    wire mem_r;
-    wire mem_w;
-    wire fetch;
-    wire [1:0] mem_sz;
-    wire [31:0] mem_addr;
-    reg [31:0] mem_rdata;
-    wire [31:0] mem_wdata;
-    wire mem_busy = 0;
+    wire mem_r  /* verilator public*/;
+    wire mem_w  /* verilator public*/;
+    wire fetch  /* verilator public*/;
+    wire [1:0] mem_sz  /* verilator public*/;
+    wire [31:0] mem_addr  /* verilator public*/;
+    reg [31:0] mem_rdata  /* verilator public*/;
+    wire [31:0] mem_wdata  /* verilator public*/;
+    wire mem_busy  /* verilator public*/ = 0;
 
     wire [3:0] wstrb = (mem_sz == 0 ? 'b1 : mem_sz == 1 ? 'b11 : 'b1111) << mem_addr[1:0];
 
-    reg [31:0] mem['h10000/4]  /* verilator public*/;
+    reg [7:0] mem['h10000]  /* verilator public*/;
+`ifndef VERILATOR
     initial begin
-        int fp = $fopen("../asm/blinky.bin");
-        $fread(mem,fp);
-        $fclose(fp);
+        $readmemh("init.mem", mem);
     end
+`endif
 
     always_ff @(posedge clk) begin
         if (mem_w) begin
-            for (int i = 0; i < 4; i++) begin
-                if (wstrb[i]) mem[mem_addr[15:2]][8*i+:8] <= mem_wdata[8*i+:8];
-            end
+            if (wstrb[0]) mem[{mem_addr[15:2], 2'd0}] <= mem_wdata[7:0];
+            if (wstrb[1]) mem[{mem_addr[15:2], 2'd1}] <= mem_wdata[15:8];
+            if (wstrb[2]) mem[{mem_addr[15:2], 2'd2}] <= mem_wdata[23:16];
+            if (wstrb[3]) mem[{mem_addr[15:2], 2'd3}] <= mem_wdata[31:24];
         end
         if (mem_r) begin
-            mem_rdata <= mem[mem_addr[15:2]];
+            mem_rdata <= {
+                mem[{mem_addr[15:2], 2'd3}],
+                mem[{mem_addr[15:2], 2'd2}],
+                mem[{mem_addr[15:2], 2'd1}],
+                mem[{mem_addr[15:2], 2'd0}]
+            };
         end
     end
 
@@ -46,8 +52,8 @@ module top (
     wire [31:0] io_wdata  /*verilator public */;
 
     always_comb begin
-        logic io_ren = 1;
-        logic [31:0] io_val = 0;
+        automatic logic io_ren = 1;
+        automatic logic [31:0] io_val = 0;
         case (io_addr)
             IO_LED:  io_val = {26'b0, led};
             default: io_ren = 0;

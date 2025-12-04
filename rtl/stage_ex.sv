@@ -38,7 +38,9 @@ module stage_ex (
     );
 
     always_comb begin
-        automatic logic stall = MEM.stall;
+        automatic logic stall;
+
+        stall = MEM.stall;
 
         if (MEM.w_rd && rs3 == MEM.rd) EX.op3 = MEM.res;
         else if (WB.w_rd && rs3 == WB.rd) EX.op3 = WB.res;

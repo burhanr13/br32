@@ -1,13 +1,14 @@
 #include "rules.asm"
 
-#const CLKSPEED = 27_000_000
+#const CLKSPEED = 50_000_000
 
 #const LED = 0x1000
 
 start:
     movi s0, 0
 .loop:
-    mtio s0, LED
+    not t0, s0
+    mtio t0, LED
     addi s0, s0, 1
     movi a0, CLKSPEED / 2
     jl delay

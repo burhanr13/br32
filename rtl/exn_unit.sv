@@ -62,8 +62,8 @@ module exn_unit (
     end
 
     always_comb begin
-        logic sr_read = 1;
-        logic [31:0] sr_val = 0;
+        automatic logic sr_read = 1;
+        automatic logic [31:0] sr_val = 0;
         case (sr_addr)
             SR_IE: sr_val = {31'b0, ie};
             SR_SIE: sr_val = {31'b0, saved_ie};
