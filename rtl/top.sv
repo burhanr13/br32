@@ -69,9 +69,4 @@ module top (
 
     core core0 (.*);
 
-    initial begin
-        $dumpfile("trace.vcd");
-        $dumpvars();
-    end
-
 endmodule

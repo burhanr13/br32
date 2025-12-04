@@ -1,6 +1,6 @@
 #include "rules.asm"
 
-#const CLKSPEED = 50_000_000
+#const CLKSPEED = 27_000_000
 
 #const LED = 0x1000
 
