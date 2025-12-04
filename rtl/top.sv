@@ -35,14 +35,12 @@ module top (
             if (wstrb[2]) mem[{mem_addr[15:2], 2'd2}] <= mem_wdata[23:16];
             if (wstrb[3]) mem[{mem_addr[15:2], 2'd3}] <= mem_wdata[31:24];
         end
-        if (mem_r) begin
-            mem_rdata <= {
-                mem[{mem_addr[15:2], 2'd3}],
-                mem[{mem_addr[15:2], 2'd2}],
-                mem[{mem_addr[15:2], 2'd1}],
-                mem[{mem_addr[15:2], 2'd0}]
-            };
-        end
+        mem_rdata <= {
+            mem[{mem_addr[15:2], 2'd3}],
+            mem[{mem_addr[15:2], 2'd2}],
+            mem[{mem_addr[15:2], 2'd1}],
+            mem[{mem_addr[15:2], 2'd0}]
+        };
     end
 
     wire io_r  /*verilator public*/;
