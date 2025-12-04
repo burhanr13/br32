@@ -1,0 +1,17 @@
+---
+# Note: The contents of this file are automatically generated.
+# Any changes made by hand may be overwritten.
+version: '0.2'
+work_dir: rtl
+design_root_dir: .
+simulations:
+  - name: top
+    options: '-top work.sim +acc+b'
+source_files:
+  - language: verilog
+    path: list.txt
+    file_list: relative-to-file
+  - language: verilog
+    path: ../sim/sim.sv
+library_search_paths:
+  - $STD_LIBS/ieee93
