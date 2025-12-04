@@ -14,6 +14,8 @@
 #subruledef sreg {
     {i:u16} => i
 
+    sysclk => 0x0000
+
     ie => 0x1000
     sie => 0x1001
     scr => 0x1002

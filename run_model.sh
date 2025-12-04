@@ -1,6 +1,6 @@
 #!/bin/bash
 
-make -C rtl || exit 1
+make -C sim || exit 1
 
 args=
 
@@ -16,4 +16,4 @@ for a in $@; do
     fi
 done
 
-./rtl/obj_dir/Vcore $args
+./sim/obj_dir/Vtop $args

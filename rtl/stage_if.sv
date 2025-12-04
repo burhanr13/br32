@@ -20,19 +20,24 @@ module stage_if #(
 
     reg [31:0] pc;
 
+    reg prev_branch;
+    reg [31:0] prev_branch_dest;
+
     always_comb begin
         IF.pc = pc;
         IF.instr = instr_data;
 
+        IF.stall = ID.stall || instr_busy;
+
         if (exn) begin
             if (eret) IF.nextpc = elr;
             else IF.nextpc = {RESET_VEC[31:8], exn_type, 2'b0};
-        end else if (ID.branch) IF.nextpc = ID.branch_dest;
-        else if (!instr_busy) IF.nextpc = pc + 4;
-        else IF.nextpc = pc;
+        end else if (prev_branch) IF.nextpc = prev_branch_dest;
+        else if (ID.branch) IF.nextpc = ID.branch_dest;
+        else if (IF.stall) IF.nextpc = pc;
+        else IF.nextpc = pc + 4;
 
-        IF.stall   = ID.stall || instr_busy;
-        IF.bubble  = ID.branch || IF.stall;
+        IF.bubble  = ID.branch || prev_branch || IF.stall;
 
         instr_addr = IF.nextpc;
     end
@@ -40,6 +45,12 @@ module stage_if #(
     always_ff @(posedge clk) begin
         if (!IF.stall || exn) begin
             pc <= IF.nextpc;
+            prev_branch <= 0;
+        end else begin
+            if (ID.branch && !prev_branch) begin
+                prev_branch <= 1;
+                prev_branch_dest <= ID.branch_dest;
+            end
         end
     end
 

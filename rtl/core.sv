@@ -19,6 +19,7 @@ module core (
     input [31:0] io_rdata,
     output [31:0] io_wdata
 );
+    import sr_pkg::*;
 
     reg [31:0] regs[32]  /*verilator public*/;
     reg [1:0] cmp_reg  /*verilator public*/;
@@ -36,6 +37,7 @@ module core (
     mem_out_if MEM ();
     wb_out_if WB ();
 
+    wire [15:0] sr_addr;
     wire [31:0] sr_rdata;
 
     wire [31:0] instr_addr;
@@ -49,6 +51,13 @@ module core (
     wire [31:0] data_rdata;
     wire [31:0] data_wdata;
     wire data_busy;
+
+    reg [31:0] sysclk;
+    always_ff @(posedge clk) begin
+        if (rst) sysclk <= 0;
+        else sysclk <= sysclk + 1;
+    end
+    assign sr_rdata = sr_addr == SR_SYSCLK ? sysclk : 'z;
 
     arbiter a (.*);
 

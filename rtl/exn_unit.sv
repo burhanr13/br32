@@ -6,14 +6,6 @@ typedef enum logic [5:0] {
     UDF   = 3
 } exn_e;
 
-typedef enum {
-    SR_IE = 'h1000,
-    SR_SIE,
-    SR_SCR,
-    SR_ELR,
-    SR_EINFO
-} sreg_e;
-
 module exn_unit (
     input clk,
     input rst,
@@ -24,10 +16,12 @@ module exn_unit (
     output logic exn,
     output logic [5:0] exn_type,
     output logic eret,
-    output logic [31:0] sr_rdata,
+    input [15:0] sr_addr,
+    output reg [31:0] sr_rdata,
     output [31:0] elr,
     output [1:0] scr
 );
+    import sr_pkg::*;
 
     reg ie  /*verilator public*/;
     reg saved_ie  /*verilator public*/;
@@ -40,7 +34,7 @@ module exn_unit (
     assign elr = saved_pc;
     assign scr = saved_cr;
 
-    wire true_ie = (MEM.mtsr && MEM.alu_res == SR_IE) ? MEM.op3[0] : ie;
+    wire true_ie = (MEM.mtsr && sr_addr == SR_IE) ? MEM.op3[0] : ie;
 
     always_comb begin
         exn = 0;
@@ -65,15 +59,20 @@ module exn_unit (
             exn = 1;
             exn_type = IRQ;
         end
+    end
 
-        case (MEM.alu_res)
-            SR_IE: sr_rdata = {31'b0, ie};
-            SR_SIE: sr_rdata = {31'b0, saved_ie};
-            SR_SCR: sr_rdata = {30'b0, saved_cr};
-            SR_ELR: sr_rdata = saved_pc;
-            SR_EINFO: sr_rdata = exn_info;
-            default: sr_rdata = 0;
+    always_comb begin
+        logic sr_read = 1;
+        logic [31:0] sr_val = 0;
+        case (sr_addr)
+            SR_IE: sr_val = {31'b0, ie};
+            SR_SIE: sr_val = {31'b0, saved_ie};
+            SR_SCR: sr_val = {30'b0, saved_cr};
+            SR_ELR: sr_val = saved_pc;
+            SR_EINFO: sr_val = exn_info;
+            default: sr_read = 0;
         endcase
+        sr_rdata = sr_read ? sr_val : 'z;
     end
 
     always_ff @(posedge clk) begin
@@ -87,13 +86,12 @@ module exn_unit (
             if (save_exn_info) exn_info <= MEM.alu_res;
             else exn_info <= 0;
         end else if (MEM.mtsr) begin
-            case (MEM.alu_res)
+            case (sr_addr)
                 SR_IE: ie <= MEM.op3[0];
                 SR_SIE: saved_ie <= MEM.op3[0];
                 SR_SCR: saved_cr <= MEM.op3[1:0];
                 SR_ELR: saved_pc <= MEM.op3;
                 SR_EINFO: exn_info <= MEM.op3;
-                default: ;
             endcase
         end
     end

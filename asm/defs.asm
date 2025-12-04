@@ -239,9 +239,9 @@ timed:
     mov a2, a3
     mov a3, a4
 
-    mfio s0, CLK
+    mfsr s0, sysclk
     jlr t0
-    mfio a1, CLK
+    mfsr a1, sysclk
     sub a1, a1, s0
     subi a1, a1, 3
 
@@ -287,10 +287,10 @@ stop_timer:
     ret
 
 delay:
-    mfio t0, CLK
+    mfsr t0, sysclk
     add a0, a0, t0
 .loop:
-    mfio t0, CLK
+    mfsr t0, sysclk
     ucmp t0, a0
     blt .loop
     ret

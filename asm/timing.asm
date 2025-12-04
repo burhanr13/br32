@@ -45,19 +45,19 @@ something:
     ret
 
 mem:
-    ldw a0, (sp) ; 1
+    ldw a0, (sp) ; 2
     addi a0, a0, 1 ; 2
-    ldb a0, (sp) ; 1
+    ldb a0, (sp) ; 2
     movi a1, 2 ; 1
     sub a0, a0, a1 ; 1
-    sth a0, -2(sp) ; 1
+    sth a0, -2(sp) ; 2
     addi a0, a0, 1 ; 1
-    ldb a0, (sp) ; 1
-    stb a0, -2(sp) ; 1
+    ldb a0, (sp) ; 2
+    stb a0, -2(sp) ; 2
     jp $+8 ; 2
     ldw a0, (sp) ; 0
     add a0, a0, a1 ; 1
-    ldw zr, (sp) ; 1
+    ldw zr, (sp) ; 2
     mov a0, zr ; 1
     ucmpi zr, 1 ; 1
     jp $+8 ; 2

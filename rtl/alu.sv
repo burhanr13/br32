@@ -31,6 +31,9 @@ module alu (
     );
 
     always_comb begin
+        res = 0;
+        cmp_res = 0;
+
         case (opc[5:4])
             0:
             case (opc[1:0])
@@ -38,14 +41,12 @@ module alu (
                 1: res = and_res;
                 2: res = op1 | op2;
                 3: res = op1 ^ op2;
-                default: res = 0;
             endcase
             1: res = shift_res;
             3: begin
                 if (cond_true) res = opc[3] ? op1 + 1 : op1;
                 else res = op2_i;
             end
-            default: res = 0;
         endcase
 
         case (opc[1:0])
@@ -61,7 +62,6 @@ module alu (
                 cmp_res[EQ] = and_res == 0;
                 cmp_res[LT] = and_res[31];
             end
-            default: cmp_res = 0;
         endcase
     end
 

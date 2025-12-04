@@ -5,12 +5,12 @@ module stage_mem (
     mem_out_if.master MEM,
     ex_out_if.other EX,
 
-    output logic data_r,
-    output logic data_w,
-    output logic [1:0] data_sz,
-    output logic [31:0] data_addr,
+    output data_r,
+    output data_w,
+    output [1:0] data_sz,
+    output [31:0] data_addr,
     input [31:0] data_rdata,
-    output logic [31:0] data_wdata,
+    output [31:0] data_wdata,
     input data_busy,
 
     output reg io_r_o,
@@ -19,9 +19,10 @@ module stage_mem (
     input [31:0] io_rdata,
     output reg [31:0] io_wdata,
 
+    output reg [15:0] sr_addr,
     input [31:0] sr_rdata,
-    input [ 1:0] cmp_reg,
-    input [ 1:0] scr
+    input [1:0] cmp_reg,
+    input [1:0] scr
 );
 
     reg mem_r, mem_w;
@@ -38,9 +39,11 @@ module stage_mem (
 
     reg scall, eret, udf;
 
-    reg link;
+    reg  link;
 
-    reg bubble  /*verilator public*/;
+    reg  bubble  /*verilator public*/;
+
+    wire [31:0] data_rdata_sh = data_rdata >> {MEM.alu_res[1:0], 3'b0};
 
     always_comb begin
         automatic logic stall = 0;
@@ -50,8 +53,8 @@ module stage_mem (
         else if (mfsr) MEM.res = sr_rdata;
         else if (mem_r) begin
             case (mem_sz)
-                0: MEM.res = {{24{mem_sx && data_rdata[7]}}, data_rdata[7:0]};
-                1: MEM.res = {{16{mem_sx && data_rdata[15]}}, data_rdata[15:0]};
+                0: MEM.res = {{24{mem_sx && data_rdata[7]}}, data_rdata_sh[7:0]};
+                1: MEM.res = {{16{mem_sx && data_rdata[15]}}, data_rdata_sh[15:0]};
                 default: MEM.res = data_rdata;
             endcase
         end else if (io_r) MEM.res = io_rdata;
@@ -69,15 +72,15 @@ module stage_mem (
 
         stall |= (mem_r || mem_w) && data_busy;
 
-        MEM.stall = stall && !bubble;
+        MEM.stall  = stall && !bubble;
         MEM.bubble = bubble || MEM.stall;
-
-        data_r = EX.mem_r && !EX.bubble && !exn;
-        data_w = EX.mem_w && !EX.bubble && !exn;
-        data_sz = EX.mem_sz;
-        data_addr = EX.alu_res;
-        data_wdata = EX.op3;
     end
+
+    assign data_r = EX.mem_r && !EX.bubble && !exn;
+    assign data_w = EX.mem_w && !EX.bubble && !exn;
+    assign data_sz = EX.mem_sz;
+    assign data_addr = EX.alu_res;
+    assign data_wdata = EX.op3;
 
     always_ff @(posedge clk) begin
         if (!MEM.stall || exn) begin
@@ -109,6 +112,8 @@ module stage_mem (
         io_w_o   <= EX.io_w && !EX.bubble && !exn;
         io_addr  <= EX.alu_res[15:0];
         io_wdata <= EX.op3;
+
+        sr_addr  <= EX.alu_res[15:0];
     end
 
 endmodule

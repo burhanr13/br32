@@ -3,8 +3,8 @@
 
 #include <verilated.h>
 
-#include "Vcore.h"
-#include "Vcore__Syms.h"
+#include "Vtop.h"
+#include "Vtop__Syms.h"
 
 bool debug = false;
 
@@ -24,7 +24,7 @@ SDL_AudioStream* audioStream;
 
 u8 mem[0x10000];
 
-Vcore model;
+Vtop model;
 
 long cycles = 0;
 
@@ -55,12 +55,13 @@ int cur_sample = 0;
 u8 audio_buf[1024];
 int audio_idx;
 
-u32 rio(u16 port) {
+void rio(u16 port, u32& data) {
     switch (static_cast<IoPort>(port)) {
-        case IoPort::CLK: return cycles;
-        case IoPort::TMRCNT: return tmrcnt.raw;
-        case IoPort::TMRVAL: return tmrval;
-        default: return 0;
+        case IoPort::HALT:
+        case IoPort::COUT: break;
+        case IoPort::CLK: data = cycles; break;
+        case IoPort::TMRCNT: data = tmrcnt.raw; break;
+        case IoPort::TMRVAL: data = tmrval; break;
     }
 }
 
@@ -94,32 +95,30 @@ void handle_timer() {
             // cur_sample = !cur_sample;
         }
     }
-    model.irq = tmrcnt.irqena && tmrcnt.irqpend;
+    model.top->irq = tmrcnt.irqena && tmrcnt.irqpend;
 }
 
 void dump() {
-    DEBUG("\tpipe: IF:%x ", model.core->IF->pc);
-    DEBUG("%x ", model.mem_rdata);
-    if (model.core->s_id->bubble) {
-        DEBUG("ID:(%x) ", model.core->ID->__PVT__nextpc);
+    DEBUG("\tpipe: IF:%x ", model.top->core0->IF->pc);
+    if (model.top->core0->s_id->bubble) {
+        DEBUG("ID:(%x) ", model.top->core0->ID->__PVT__nextpc);
     } else {
-        DEBUG("ID:%x ", model.core->ID->pc);
-        DEBUG("%x ", model.core->s_id->__PVT__instr);
+        DEBUG("ID:%x ", model.top->core0->ID->pc);
     }
-    if (model.core->s_ex->bubble) {
-        DEBUG("EX:(%x) ", model.core->EX->__PVT__nextpc);
+    if (model.top->core0->s_ex->bubble) {
+        DEBUG("EX:(%x) ", model.top->core0->EX->__PVT__nextpc);
     } else {
-        DEBUG("EX:%x ", model.core->EX->pc);
+        DEBUG("EX:%x ", model.top->core0->EX->pc);
     }
-    if (model.core->s_mem->bubble) {
-        DEBUG("MEM:(%x) ", model.core->MEM->__PVT__nextpc);
+    if (model.top->core0->s_mem->bubble) {
+        DEBUG("MEM:(%x) ", model.top->core0->MEM->__PVT__nextpc);
     } else {
-        DEBUG("MEM:%x ", model.core->MEM->pc);
+        DEBUG("MEM:%x ", model.top->core0->MEM->pc);
     }
-    if (model.core->s_wb->bubble) {
+    if (model.top->core0->s_wb->bubble) {
         DEBUG("WB:() ");
     } else {
-        DEBUG("WB:%x ", model.core->WB->pc);
+        DEBUG("WB:%x ", model.top->core0->WB->pc);
     }
     DEBUG("\n\t");
     const char* reg_names[] = {
@@ -127,16 +126,17 @@ void dump() {
         "t4", "t5", "t6", "t7", "t8", "t9",  "s0",  "s1",  "s2", "s3", "s4",
         "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "fp", "lr"};
     for (int i = 0; i < 32; i++) {
-        DEBUG("%s=%x ", reg_names[i], model.core->regs[i]);
+        DEBUG("%s=%x ", reg_names[i], model.top->core0->regs[i]);
         if (i % 8 == 7) DEBUG("\n\t");
     }
     const char* conditions[4] = {"GT", "EQ", "LT", "??"};
-    DEBUG("cr=%s\n", conditions[model.core->cmp_reg]);
-    DEBUG("\tie=%x sie=%x scr=%s elr=%x einfo=%x\n", model.core->e->ie,
-          model.core->e->saved_ie, conditions[model.core->e->saved_cr],
-          model.core->e->saved_pc, model.core->e->exn_info);
+    DEBUG("cr=%s\n", conditions[model.top->core0->cmp_reg]);
+    DEBUG("\tie=%x sie=%x scr=%s elr=%x einfo=%x\n", model.top->core0->e->ie,
+          model.top->core0->e->saved_ie,
+          conditions[model.top->core0->e->saved_cr],
+          model.top->core0->e->saved_pc, model.top->core0->e->exn_info);
 
-    DEBUG("\tirq=%d\n", model.irq);
+    DEBUG("\tirq=%d\n", model.top->irq);
 
     // DEBUG("\tIF=%s\n",
     // VL_TO_STRING(model.rootp->core__DOT__if_out).c_str());
@@ -151,49 +151,50 @@ void dump() {
 }
 
 void handle_mem() {
-    static u32 next_rdata;
-    if (model.clk) {
-        if (model.mem_r) {
-            switch (model.mem_sz) {
-                case 0:
-                    next_rdata = *(u8*) &mem[model.mem_addr % sizeof mem];
-                    break;
-                case 1:
-                    next_rdata = *(u16*) &mem[model.mem_addr % sizeof mem];
-                    break;
-                case 2:
-                    next_rdata = *(u32*) &mem[model.mem_addr % sizeof mem];
-                    break;
-            }
-            DEBUG("\tmem %s %d [%x]=%x\n", model.fetch ? "fetch" : "read",
-                  8 << model.mem_sz, model.mem_addr, next_rdata);
-        } else if (model.mem_w) {
-            switch (model.mem_sz) {
-                case 0:
-                    *(u8*) &mem[model.mem_addr % sizeof mem] = model.mem_wdata;
-                    break;
-                case 1:
-                    *(u16*) &mem[model.mem_addr % sizeof mem] = model.mem_wdata;
-                    break;
-                case 2:
-                    *(u32*) &mem[model.mem_addr % sizeof mem] = model.mem_wdata;
-                    break;
-            }
-            DEBUG("\tmem write %d [%x]=%x\n", 8 << model.mem_sz, model.mem_addr,
-                  model.mem_wdata);
-        }
-    } else {
-        model.mem_rdata = next_rdata;
-    }
+    // static u32 next_rdata;
+    // if (model.clk) {
+    //     if (model.mem_r) {
+    //         switch (model.mem_sz) {
+    //             case 0:
+    //                 next_rdata = *(u8*) &mem[model.mem_addr % sizeof mem];
+    //                 break;
+    //             case 1:
+    //                 next_rdata = *(u16*) &mem[model.mem_addr % sizeof mem];
+    //                 break;
+    //             case 2:
+    //                 next_rdata = *(u32*) &mem[model.mem_addr % sizeof mem];
+    //                 break;
+    //         }
+    //         DEBUG("\tmem %s %d [%x]=%x\n", model.fetch ? "fetch" : "read",
+    //               8 << model.mem_sz, model.mem_addr, next_rdata);
+    //     } else if (model.mem_w) {
+    //         switch (model.mem_sz) {
+    //             case 0:
+    //                 *(u8*) &mem[model.mem_addr % sizeof mem] =
+    //                 model.mem_wdata; break;
+    //             case 1:
+    //                 *(u16*) &mem[model.mem_addr % sizeof mem] =
+    //                 model.mem_wdata; break;
+    //             case 2:
+    //                 *(u32*) &mem[model.mem_addr % sizeof mem] =
+    //                 model.mem_wdata; break;
+    //         }
+    //         DEBUG("\tmem write %d [%x]=%x\n", 8 << model.mem_sz,
+    //         model.mem_addr,
+    //               model.mem_wdata);
+    //     }
+    // } else {
+    //     model.mem_rdata = next_rdata;
+    // }
 }
 
 void handle_io() {
-    if (model.io_r) {
-        model.io_rdata = rio(model.io_addr);
-        DEBUG("\tio read [%x]=%x\n", model.io_addr, model.io_rdata);
-    } else if (model.io_w) {
-        wio(model.io_addr, model.io_wdata);
-        DEBUG("\tio write [%x]=%x\n", model.io_addr, model.io_wdata);
+    if (model.top->io_r) {
+        rio(model.top->io_addr, model.top->io_rdata);
+        DEBUG("\tio read [%x]=%x\n", model.top->io_addr, model.top->io_rdata);
+    } else if (model.top->io_w) {
+        wio(model.top->io_addr, model.top->io_wdata);
+        DEBUG("\tio write [%x]=%x\n", model.top->io_addr, model.top->io_wdata);
     }
     handle_timer();
 }
@@ -217,7 +218,7 @@ void step() {
     handle_mem();
     handle_io();
     model.eval();
-    model.rst = 0;
+    model.rstn = 1;
     Verilated::timeInc(5);
 
     dump();
@@ -239,7 +240,7 @@ int main(int argc, char** argv) {
         } else {
             FILE* fp = fopen(*argv, "rb");
             if (fp) {
-                fread(mem, 1, sizeof(mem), fp);
+                fread(model.top->mem.data(), 1, sizeof(mem), fp);
                 fclose(fp);
             } else {
                 perror("fopen");
@@ -260,7 +261,7 @@ int main(int argc, char** argv) {
     //                                         &as, nullptr, nullptr);
     // SDL_ResumeAudioStreamDevice(audioStream);
 
-    model.rst = 1;
+    model.rstn = 0;
     model.clk = 0;
     model.eval();
     Verilated::timeInc(5);
