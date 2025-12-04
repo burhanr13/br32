@@ -1,0 +1,31 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW2A-18C" pn="GW2A-LV18PG256C8/I7">gw2a18c-011</Device>
+    <FileList>
+        <File path="rtl/alu.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/alu_pkg.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/arbiter.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/core.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/decoder.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/decoder_pkg.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/ex_out_if.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/exn_unit.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/id_out_if.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/if_out_if.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/mem_out_if.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/shifter.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/sr_pkg.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/stage_ex.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/stage_id.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/stage_if.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/stage_mem.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/stage_wb.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/top.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/wb_out_if.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/top.cst" type="file.cst" enable="1"/>
+        <File path="rtl/top.sdc" type="file.sdc" enable="1"/>
+    </FileList>
+</Project>

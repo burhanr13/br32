@@ -10,8 +10,9 @@ log*
 .cache
 compile_commands.json
 
-*.gprj*
 impl
+!impl/br32_process_config.json
+*.gprj.user
 
 *.vcd
 
