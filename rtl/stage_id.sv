@@ -7,7 +7,7 @@ module stage_id (
     ex_out_if.other EX,
     mem_out_if.other MEM,
     wb_out_if.other WB,
-    input [31:0] regs[32],
+    regfile_if.id rif,
     input [1:0] cmp_reg
 );
     import decoder_pkg::*;
@@ -21,32 +21,34 @@ module stage_id (
         .out(dec)
     );
 
-    function automatic [31:0] read_reg(logic [4:0] rn, logic r_rn, inout logic stall);
-        if (rn == 0) read_reg = 0;
-        else if (EX.w_rd && rn == EX.rd) begin
+    function automatic [31:0] read_reg(logic [4:0] rn, logic r_rn, inout logic stall,
+                                       input logic [31:0] rfval);
+        if (EX.w_rd && rn == EX.rd) begin
             if (r_rn && EX.res_in_mem) begin
                 stall |= 1;
                 read_reg = 0;
             end else read_reg = EX.alu_res;
         end else if (MEM.w_rd && rn == MEM.rd) read_reg = MEM.res;
         else if (WB.w_rd && rn == WB.rd) read_reg = WB.res;
-        else read_reg = regs[rn];
+        else read_reg = rfval;
     endfunction
 
     always_comb begin
         automatic logic stall;
         logic [1:0] cr_val;
 
-        stall = EX.stall;
+        stall   = EX.stall;
 
-        ID.dec = dec;
+        ID.dec  = dec;
+        rif.rs1 = dec.rs1;
+        rif.rs2 = dec.rs2;
 
         if (dec.op1_0) ID.op1 = 0;
         else if (dec.op1_pc) ID.op1 = ID.pc;
-        else ID.op1 = read_reg(dec.rs1, dec.r_rs1, stall);
+        else ID.op1 = read_reg(dec.rs1, dec.r_rs1, stall, rif.rs1_val);
 
         if (dec.op2_imm) ID.op2 = dec.imm;
-        else ID.op2 = read_reg(dec.rs2, dec.r_rs2, stall);
+        else ID.op2 = read_reg(dec.rs2, dec.r_rs2, stall, rif.rs2_val);
 
         if (EX.w_cr) cr_val = EX.cmp_res;
         else if (MEM.w_cr) cr_val = MEM.cmp_res;

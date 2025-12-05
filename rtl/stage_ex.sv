@@ -6,7 +6,7 @@ module stage_ex (
     id_out_if.other ID,
     mem_out_if.other MEM,
     wb_out_if.other WB,
-    input [31:0] regs[32]
+    regfile_if.ex rif
 );
 
     reg [31:0] op1, op2;
@@ -42,9 +42,11 @@ module stage_ex (
 
         stall = MEM.stall;
 
+        rif.rs3 = rs3;
+
         if (MEM.w_rd && rs3 == MEM.rd) EX.op3 = MEM.res;
         else if (WB.w_rd && rs3 == WB.rd) EX.op3 = WB.res;
-        else EX.op3 = regs[rs3];
+        else EX.op3 = rif.rs3_val;
 
         if (EX.mem_w) begin
             if (EX.mem_sz == 0) EX.op3 = {4{EX.op3[7:0]}};

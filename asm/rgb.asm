@@ -17,7 +17,7 @@ start:
     addi s0, s0, 1
     ucmpi s0, 6
     movge s0, zr
-    movi a0, CLKSPEED
+    movi a0, CLKSPEED / 4
     jl delay
     jp .loop
 

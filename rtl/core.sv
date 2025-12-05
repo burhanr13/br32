@@ -21,7 +21,9 @@ module core (
 );
     import sr_pkg::*;
 
-    reg [31:0] regs[32]  /*verilator public*/;
+    regfile_if rif ();
+
+    regfile regs (.*);
     reg [1:0] cmp_reg  /*verilator public*/;
 
     wire exn;

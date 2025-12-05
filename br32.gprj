@@ -16,6 +16,8 @@
         <File path="rtl/id_out_if.sv" type="file.verilog" enable="1"/>
         <File path="rtl/if_out_if.sv" type="file.verilog" enable="1"/>
         <File path="rtl/mem_out_if.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/regfile.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/regfile_if.sv" type="file.verilog" enable="1"/>
         <File path="rtl/shifter.sv" type="file.verilog" enable="1"/>
         <File path="rtl/sr_pkg.sv" type="file.verilog" enable="1"/>
         <File path="rtl/stage_ex.sv" type="file.verilog" enable="1"/>

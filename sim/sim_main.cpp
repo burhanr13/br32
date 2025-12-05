@@ -125,7 +125,7 @@ void dump() {
         "t4", "t5", "t6", "t7", "t8", "t9",  "s0",  "s1",  "s2", "s3", "s4",
         "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "fp", "lr"};
     for (int i = 0; i < 32; i++) {
-        DEBUG("%s=%x ", reg_names[i], top->core0->regs[i]);
+        DEBUG("%s=%x ", reg_names[i], top->core0->regs->read(i));
         if (i % 8 == 7) DEBUG("\n\t");
     }
     const char* conditions[4] = {"GT", "EQ", "LT", "??"};

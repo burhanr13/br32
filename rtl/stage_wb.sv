@@ -4,7 +4,7 @@ module stage_wb (
     input rst,
     wb_out_if.master WB,
     mem_out_if.other MEM,
-    output reg [31:0] regs[32],
+    regfile_if.wb rif,
     output reg [1:0] cmp_reg
 );
 
@@ -13,7 +13,11 @@ module stage_wb (
     reg bubble  /*verilator public*/;
 
     always_comb begin
-        WB.w_rd   = w_rd && !bubble;
+        WB.w_rd = w_rd && !bubble;
+        rif.w_rd = WB.w_rd;
+        rif.rd = WB.rd;
+        rif.rd_val = WB.res;
+
         WB.bubble = bubble;
     end
 
@@ -25,7 +29,6 @@ module stage_wb (
 
         bubble <= MEM.bubble;
 
-        if (!WB.bubble && w_rd) regs[WB.rd] <= WB.res;
         if (MEM.w_cr) cmp_reg <= MEM.cmp_res;
     end
 
