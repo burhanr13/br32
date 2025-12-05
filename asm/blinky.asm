@@ -7,8 +7,7 @@
 start:
     movi s0, 0
 .loop:
-    not t0, s0
-    mtio t0, LED
+    mtio s0, LED
     addi s0, s0, 1
     movi a0, CLKSPEED / 2
     jl delay

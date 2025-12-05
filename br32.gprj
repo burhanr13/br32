@@ -25,7 +25,9 @@
         <File path="rtl/stage_wb.sv" type="file.verilog" enable="1"/>
         <File path="rtl/top.sv" type="file.verilog" enable="1"/>
         <File path="rtl/wb_out_if.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/ws2812.sv" type="file.verilog" enable="1"/>
         <File path="rtl/top.cst" type="file.cst" enable="1"/>
         <File path="rtl/top.sdc" type="file.sdc" enable="1"/>
+        <File path="rtl/br32.rao" type="file.gao" enable="0"/>
     </FileList>
 </Project>

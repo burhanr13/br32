@@ -1,0 +1,141 @@
+<?xml version="1" encoding="UTF-8"?>
+<GAO_CONFIG>
+    <Version>3.0</Version>
+    <Mode>Standard</Mode>
+    <AoCore index="0" sample_clock="clk" trig_type="0" storage_depth="1024" window_num="1" capture_amount="1024" implementation="0" trigger_pos="0" module_name="top" force_trigger_by_falling_edge="false" capture_init_data_enabled="false">
+        <SignalList>
+            <Signal capture_enable="true">ws2812_o</Signal>
+            <Bus capture_enable="true" name="reg_rgb[24:0]">
+                <Signal>reg_rgb[24]</Signal>
+                <Signal>reg_rgb[23]</Signal>
+                <Signal>reg_rgb[22]</Signal>
+                <Signal>reg_rgb[21]</Signal>
+                <Signal>reg_rgb[20]</Signal>
+                <Signal>reg_rgb[19]</Signal>
+                <Signal>reg_rgb[18]</Signal>
+                <Signal>reg_rgb[17]</Signal>
+                <Signal>reg_rgb[16]</Signal>
+                <Signal>reg_rgb[15]</Signal>
+                <Signal>reg_rgb[14]</Signal>
+                <Signal>reg_rgb[13]</Signal>
+                <Signal>reg_rgb[12]</Signal>
+                <Signal>reg_rgb[11]</Signal>
+                <Signal>reg_rgb[10]</Signal>
+                <Signal>reg_rgb[9]</Signal>
+                <Signal>reg_rgb[8]</Signal>
+                <Signal>reg_rgb[7]</Signal>
+                <Signal>reg_rgb[6]</Signal>
+                <Signal>reg_rgb[5]</Signal>
+                <Signal>reg_rgb[4]</Signal>
+                <Signal>reg_rgb[3]</Signal>
+                <Signal>reg_rgb[2]</Signal>
+                <Signal>reg_rgb[1]</Signal>
+                <Signal>reg_rgb[0]</Signal>
+            </Bus>
+            <Bus capture_enable="true" name="io_wdata[31:0]">
+                <Signal>io_wdata[31]</Signal>
+                <Signal>io_wdata[30]</Signal>
+                <Signal>io_wdata[29]</Signal>
+                <Signal>io_wdata[28]</Signal>
+                <Signal>io_wdata[27]</Signal>
+                <Signal>io_wdata[26]</Signal>
+                <Signal>io_wdata[25]</Signal>
+                <Signal>io_wdata[24]</Signal>
+                <Signal>io_wdata[23]</Signal>
+                <Signal>io_wdata[22]</Signal>
+                <Signal>io_wdata[21]</Signal>
+                <Signal>io_wdata[20]</Signal>
+                <Signal>io_wdata[19]</Signal>
+                <Signal>io_wdata[18]</Signal>
+                <Signal>io_wdata[17]</Signal>
+                <Signal>io_wdata[16]</Signal>
+                <Signal>io_wdata[15]</Signal>
+                <Signal>io_wdata[14]</Signal>
+                <Signal>io_wdata[13]</Signal>
+                <Signal>io_wdata[12]</Signal>
+                <Signal>io_wdata[11]</Signal>
+                <Signal>io_wdata[10]</Signal>
+                <Signal>io_wdata[9]</Signal>
+                <Signal>io_wdata[8]</Signal>
+                <Signal>io_wdata[7]</Signal>
+                <Signal>io_wdata[6]</Signal>
+                <Signal>io_wdata[5]</Signal>
+                <Signal>io_wdata[4]</Signal>
+                <Signal>io_wdata[3]</Signal>
+                <Signal>io_wdata[2]</Signal>
+                <Signal>io_wdata[1]</Signal>
+                <Signal>io_wdata[0]</Signal>
+            </Bus>
+            <Bus capture_enable="true" name="rgbcnt/curbits[23:0]">
+                <Signal>rgbcnt/curbits[23]</Signal>
+                <Signal>rgbcnt/curbits[22]</Signal>
+                <Signal>rgbcnt/curbits[21]</Signal>
+                <Signal>rgbcnt/curbits[20]</Signal>
+                <Signal>rgbcnt/curbits[19]</Signal>
+                <Signal>rgbcnt/curbits[18]</Signal>
+                <Signal>rgbcnt/curbits[17]</Signal>
+                <Signal>rgbcnt/curbits[16]</Signal>
+                <Signal>rgbcnt/curbits[15]</Signal>
+                <Signal>rgbcnt/curbits[14]</Signal>
+                <Signal>rgbcnt/curbits[13]</Signal>
+                <Signal>rgbcnt/curbits[12]</Signal>
+                <Signal>rgbcnt/curbits[11]</Signal>
+                <Signal>rgbcnt/curbits[10]</Signal>
+                <Signal>rgbcnt/curbits[9]</Signal>
+                <Signal>rgbcnt/curbits[8]</Signal>
+                <Signal>rgbcnt/curbits[7]</Signal>
+                <Signal>rgbcnt/curbits[6]</Signal>
+                <Signal>rgbcnt/curbits[5]</Signal>
+                <Signal>rgbcnt/curbits[4]</Signal>
+                <Signal>rgbcnt/curbits[3]</Signal>
+                <Signal>rgbcnt/curbits[2]</Signal>
+                <Signal>rgbcnt/curbits[1]</Signal>
+                <Signal>rgbcnt/curbits[0]</Signal>
+            </Bus>
+        </SignalList>
+        <Triggers>
+            <Trigger index="0">
+                <SignalList>
+                    <Signal>rstn</Signal>
+                </SignalList>
+            </Trigger>
+            <Trigger index="1"/>
+            <Trigger index="2"/>
+            <Trigger index="3"/>
+            <Trigger index="4"/>
+            <Trigger index="5"/>
+            <Trigger index="6"/>
+            <Trigger index="7"/>
+            <Trigger index="8"/>
+            <Trigger index="9"/>
+            <Trigger index="10"/>
+            <Trigger index="11"/>
+            <Trigger index="12"/>
+            <Trigger index="13"/>
+            <Trigger index="14"/>
+            <Trigger index="15"/>
+        </Triggers>
+        <MatchUnits>
+            <MatchUnit index="0" enabled="1" match_type="1" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="R" value1="0" trigger="0"/>
+            <MatchUnit index="1" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="2" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="3" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="4" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="5" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="6" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="7" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="8" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="9" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="10" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="11" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="12" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="13" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="14" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+            <MatchUnit index="15" enabled="0" match_type="0" counter_enable="0" counter_width="2" counter="2" countinuous="0" func="0" value0="" value1=""/>
+        </MatchUnits>
+        <Expressions type="Static">
+            <Expression>M0</Expression>
+        </Expressions>
+    </AoCore>
+    <GAO_ID>0101010011000110</GAO_ID>
+</GAO_CONFIG>

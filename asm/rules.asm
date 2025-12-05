@@ -235,7 +235,8 @@
 
     {op:cond_mov}{c:cond_code} {rd:reg}, {ra:reg}, {rb:reg} => le((op+c)`11 @ rb @ ra @ rd @ 0x3e`6)
     mov{c:cond_code} {rd:reg}, {ra:reg} => asm {sel{c} {rd}, {ra}, {rd}}
-    set{c:cond_code} {rd:reg} => asm {sinc{c} {rd}, zr, zr}
+    inc{c:cond_code} {rd:reg}, {ra:reg} => asm {sinc{c} {rd}, {ra}, {ra}}
+    set{c:cond_code} {rd:reg} => asm {inc{c} {rd}, zr}
 
     {op:mem} {rd:reg}, {i:s16}({ra:reg}) => le(i @ ra @ rd @ op`6)
     {op:mem} {rd:reg}, ({ra:reg}) => asm {{op} {rd}, 0({ra})}

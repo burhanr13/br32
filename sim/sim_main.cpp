@@ -153,28 +153,33 @@ void handle_mem() {
     // if (model->clk) {
     //     if (top->mem_r) {
     //         next_rdata = *(u32*) &top->mem.m_storage[(top->mem_addr & ~3) %
-    //                                                  sizeof top->mem.m_storage];
+    //                                                  sizeof
+    //                                                  top->mem.m_storage];
     //         DEBUG("\tmem %s %d [%x]=%x\n", top->fetch ? "fetch" : "read",
     //               8 << top->mem_sz, top->mem_addr, next_rdata);
     //     } else if (top->mem_w) {
     //         switch (top->mem_sz) {
     //             case 0:
     //                 *(u8*) &top->mem
-    //                      .m_storage[top->mem_addr % sizeof top->mem.m_storage] =
+    //                      .m_storage[top->mem_addr % sizeof
+    //                      top->mem.m_storage] =
     //                     top->mem_wdata;
     //                 break;
     //             case 1:
     //                 *(u16*) &top->mem
-    //                      .m_storage[top->mem_addr % sizeof top->mem.m_storage] =
+    //                      .m_storage[top->mem_addr % sizeof
+    //                      top->mem.m_storage] =
     //                     top->mem_wdata;
     //                 break;
     //             case 2:
     //                 *(u32*) &top->mem
-    //                      .m_storage[top->mem_addr % sizeof top->mem.m_storage] =
+    //                      .m_storage[top->mem_addr % sizeof
+    //                      top->mem.m_storage] =
     //                     top->mem_wdata;
     //                 break;
     //         }
-    //         DEBUG("\tmem write %d [%x]=%x\n", 8 << top->mem_sz, top->mem_addr,
+    //         DEBUG("\tmem write %d [%x]=%x\n", 8 << top->mem_sz,
+    //         top->mem_addr,
     //               top->mem_wdata);
     //     }
     // } else {
@@ -237,8 +242,15 @@ int main(int argc, char** argv) {
         } else {
             FILE* fp = fopen(*argv, "rb");
             if (fp) {
-                fread(top->mem.m_storage, 1, sizeof top->mem.m_storage, fp);
+                u8 code[4 * sizeof top->ram0];
+                int ct = fread(code, 1, sizeof code, fp);
                 fclose(fp);
+                for (int i = 0; i < ct; i += 4) {
+                    top->ram0[i >> 2] = code[i + 0];
+                    top->ram1[i >> 2] = code[i + 1];
+                    top->ram2[i >> 2] = code[i + 2];
+                    top->ram3[i >> 2] = code[i + 3];
+                }
             } else {
                 perror("fopen");
                 return 1;

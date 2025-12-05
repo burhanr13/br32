@@ -605,6 +605,8 @@ main:
 
     
 success:
+    movi t0, -1
+    mtio t0, LED
     adr a0, msg_success
     jl printf
     movi a0, 0
@@ -613,6 +615,8 @@ success:
     ret
 
 fail:
+    not t0, a0
+    mtio t0, LED
     mov a1, a0
     adr a0, msg_fail
     jl printf

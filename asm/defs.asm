@@ -7,6 +7,8 @@
 #const TMRCNT = 0x0003
 #const TMRVAL = 0x0004
 
+#const LED = 0x1000
+
 rst_vector:
     jp start
 irq_vector:
