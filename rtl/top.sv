@@ -64,13 +64,14 @@ module top #(
 
     reg [5:0] reg_led;
     assign led_o = ~reg_led;
-    reg [24:0] reg_rgb;
+
     ws2812 rgbcnt (
         .clk(clk),
-        .ena(reg_rgb[24]),
-        .r(reg_rgb[7:0]),
-        .g(reg_rgb[15:8]),
-        .b(reg_rgb[23:16]),
+        .rst(rst),
+        .wr(io_w && io_addr == IO_RGB),
+        .r(io_wdata[7:0]),
+        .g(io_wdata[15:8]),
+        .b(io_wdata[23:16]),
         .ws2812_o(ws2812_o)
     );
 
@@ -79,7 +80,6 @@ module top #(
         automatic logic [31:0] io_val = 0;
         case (io_addr)
             IO_LED:  io_val = {26'b0, reg_led};
-            IO_RGB:  io_val = {7'b0, reg_rgb};
             default: io_ren = 0;
         endcase
         io_rdata = io_ren ? io_val : 'z;
@@ -88,11 +88,9 @@ module top #(
     always_ff @(posedge clk) begin
         if (rst) begin
             reg_led <= 0;
-            reg_rgb <= 0;
         end else if (io_w) begin
             case (io_addr)
                 IO_LED: reg_led <= io_wdata[5:0];
-                IO_RGB: reg_rgb <= io_wdata[24:0];
             endcase
         end
     end

@@ -2,8 +2,9 @@ module ws2812 #(
     int CLK_SPEED = 27_000_000
 ) (
     input clk,
+    input rst,
 
-    input ena,
+    input wr,
     input [7:0] r,
     input [7:0] g,
     input [7:0] b,
@@ -24,9 +25,13 @@ module ws2812 #(
     assign ws2812_o = outbit;
 
     always_ff @(posedge clk) begin
-        if (wait_res) begin
+        if (rst) begin
+            wait_res <= 1;
+            counter <= 0;
+            outbit <= 0;
+        end else if (wait_res) begin
             if (counter == DlyRes) begin
-                if (ena) begin
+                if (wr) begin
                     counter  <= 0;
                     wait_res <= 0;
                     bitcnt   <= 0;
@@ -35,30 +40,22 @@ module ws2812 #(
                 end
             end else counter <= counter + 1;
         end else begin
-            if (!ena) begin
-                counter  <= 0;
-                wait_res <= 1;
-                bitcnt   <= 0;
-                curbits  <= 0;
-                outbit   <= 0;
+            if (outbit) begin
+                if (counter == (curbits[23] ? DlyLong - 1 : DlyShort - 1)) begin
+                    counter <= 0;
+                    outbit  <= 0;
+                end else counter <= counter + 1;
             end else begin
-                if (outbit) begin
-                    if (counter == (curbits[23] ? DlyLong - 1 : DlyShort - 1)) begin
-                        counter <= 0;
-                        outbit  <= 0;
-                    end else counter <= counter + 1;
-                end else begin
-                    if (counter == (curbits[23] ? DlyShort - 1 : DlyLong - 1)) begin
-                        counter <= 0;
-                        outbit  <= 1;
-                        if (bitcnt == 23) begin
-                            wait_res <= 1;
-                        end else begin
-                            curbits <= curbits << 1;
-                            bitcnt  <= bitcnt + 1;
-                        end
-                    end else counter <= counter + 1;
-                end
+                if (counter == (curbits[23] ? DlyShort - 1 : DlyLong - 1)) begin
+                    counter <= 0;
+                    if (bitcnt == 23) begin
+                        wait_res <= 1;
+                    end else begin
+                        curbits <= curbits << 1;
+                        bitcnt  <= bitcnt + 1;
+                        outbit <= 1;
+                    end
+                end else counter <= counter + 1;
             end
         end
     end

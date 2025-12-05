@@ -10,14 +10,13 @@ start:
     adr s1, colors
 .loop:
     ldwx t0, (s1, s0, 4)
-    srli t0, t0, 1
-    andni t0, t0, 0x1010
-    ori t0, t0, 1<<24
+    srli t0, t0, 2
+    andni t0, t0, 0x3030
     mtio t0, RGBLED
     addi s0, s0, 1
     ucmpi s0, 6
     movge s0, zr
-    movi a0, CLKSPEED / 4
+    movi a0, CLKSPEED
     jl delay
     jp .loop
 
