@@ -111,8 +111,8 @@
 #subruledef adrdst {
     {i} => {
         off = i - $
-        assert(-(1<<15) <= off && off < 1<<15, "label too far")
-        off[15:0]
+        assert(-(1<<20) <= off && off < 1<<20, "label too far")
+        off[20:0]
     }
 }
 
@@ -208,10 +208,10 @@
     tsti {ra:reg}, {i:imm16h} => le(i @ ra @ 0xa`5 @ 0x38`6)
     tsti {ra:reg}, {i:imm16hn} => le(i @ ra @ 0xe`5 @ 0x38`6)
 
-    {op:br_reg} {ra:reg} => le(0`16 @ ra @ op`5 @ 0b111000)
+    {op:br_reg} {ra:reg} => le(0`16 @ ra @ op`5 @ 0x38`6)
     ret => asm {jpr lr}
 
-    adr {rd:reg}, {i:adrdst} => le(i @ 0`5 @ rd @ 0x34`6)
+    adr {rd:reg}, {i:adrdst} => le(i @ rd @ 0x3b`6)
 
     {op:rotm_imm} {rd:reg}, {ra:reg}, {i1:u5}, {i2:u5} => le(op`6 @ i2 @ i1 @ ra @ rd @ 0x39`6)
     ubfe {rd:reg}, {ra:reg}, {lo}, {sz} => {assert(lo+sz <= 32, "invalid bitfield"), asm {rormi {rd}, {ra}, {lo}, 32-{sz}}}

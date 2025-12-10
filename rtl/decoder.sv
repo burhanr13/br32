@@ -9,6 +9,7 @@ module decoder (
     always_comb begin
         automatic logic high_imm = 0;
         automatic logic sx_imm = 0;
+        automatic logic imm21 = 0;
         automatic logic [4:0] opc_ri = instr[10:6];
         automatic logic [5:0] opc_rrii = instr[31:26];
         automatic logic [4:0] opc_special = instr[15:11];
@@ -64,12 +65,6 @@ module decoder (
                         out.w_rd = out.io_r;
                         out.r_rs3 = out.io_w;
                     end
-                    4: begin
-                        out.op1_pc = 1;
-                        out.op2_imm = 1;
-                        sx_imm = 1;
-                        out.w_rd = 1;
-                    end
                     8: begin
                         if (opc_ri[4]) begin
                             out.branch = 1;
@@ -88,6 +83,12 @@ module decoder (
                         out.alu_opc = {4'b0100, opc_rrii[3:2]};
                         out.op2_imm = 1;
                         out.r_rs1 = 1;
+                        out.w_rd = 1;
+                    end
+                    'hb: begin
+                        out.op1_pc = 1;
+                        out.op2_imm = 1;
+                        imm21 = 1;
                         out.w_rd = 1;
                     end
                     'hd: begin
@@ -161,8 +162,10 @@ module decoder (
             out.op2_imm = 1;
             out.imm = instr;
         end else begin
-            out.imm[31:16] = high_imm ? instr[31:16] : sx_imm ? {16{instr[31]}} : 0;
-            out.imm[15:0]  = high_imm ? 0 : instr[31:16];
+            if (imm21) out.imm = {{11{instr[31]}}, instr[31:11]};
+            else if (high_imm) out.imm = {instr[31:16], 16'b0};
+            else if (sx_imm) out.imm = {{16{instr[31]}}, instr[31:16]};
+            else out.imm = {16'b0, instr[31:16]};
         end
     end
 

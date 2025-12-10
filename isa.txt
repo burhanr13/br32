@@ -20,7 +20,7 @@ jmp form:
 |-------|-------|-------|-00----
 |imm                        |opc  
 
-jmp_dst = $+simm*4
+jmp_dst = pc+simm*4
 
 8 - bgt
 9 - ble
@@ -78,16 +78,18 @@ addr = (ra) + simm
 28 - ldw
 2a - stw
 
-2d - ldm    (rd)..(r31) = *addr
-2f - stm    *addr = (rd)..(r31)
-
-
 io only accessible in kernel mode
 io is 16 bit address, each port 32 bits
 30 - mfio
 31 - mtio
 
-34 - adr rd, label    (rd) = $+simm
+adr form:
+31      23      15      7
+|-------|-------|-------|-111011
+|imm                 |rd  |opc  
+
+
+34 - adr rd, label    (rd) = pc+simm
 
 ri form:
 31      23      15      7
@@ -114,7 +116,7 @@ tst equiv to scmpi (rd&imm), 0
 
 imm must be 0
 10 - jpr    pc = (rd & ~3) (ret when rd=31)
-11 - jlr    pc = (rd & ~3), lr = $+4
+11 - jlr    pc = (rd & ~3), lr = pc+4
 
 rrr form:
 31      23      15      7
@@ -242,12 +244,14 @@ udf = +c (instr in einfo)
 more to come...
 
 special registers: (0-ffff)
+0000 - sysclk (number of cycles since reset)
 
 1000 - ie [1] (interrupt enable)
 1001 - sie [1] (saved ie)
 1002 - scr [2] (saved cr)
 1003 - elr [32] (exn link register)
 1004 - einfo [32] (exn info, depends on exception)
+(probably should rearrange these)
 
 on exception:
      save pc in elr
