@@ -1,0 +1,293 @@
+  outp | addr | data (base 16)
+
+   0:0 |    0 |             ; rst_vector:
+   0:0 |    0 | 0e 01 00 00 ; jp start
+   4:0 |    4 |             ; irq_vector:
+   4:0 |    4 | 0e 3a 00 00 ; jp timer_handler
+   8:0 |    8 |             ; scall_vector:
+   8:0 |    8 | 3d 08 00 00 ; eret
+   c:0 |    c |             ; udf_vector:
+   c:0 |    c | 8e 2f 00 00 ; jp udf_handler
+  10:0 |   10 |             ; start:
+  10:0 |   10 | 5a 00 01 00 ; movi sp, 0x10000
+  14:0 |   14 | 0f 3d 00 00 ; jl main
+  18:0 |   18 | b1 00 00 00 ; mtio a0, HALT
+  1c:0 |   1c |             ; __mul:
+  1c:0 |   1c | 12 01 00 00 ; movi a2, 0
+  20:0 |   20 |             ; .mulloop:
+  20:0 |   20 | 78 11 00 00 ; ucmpi a0, 0
+  24:0 |   24 | ca 01 00 00 ; beq .mulend
+  28:0 |   28 | b8 10 01 00 ; tsti a0, 1
+  2c:0 |   2c | 7e 21 03 00 ; add a3, a2, a1
+  30:0 |   30 | 3e 29 64 06 ; movne a2, a3
+  34:0 |   34 | b9 10 21 00 ; srli a0, a0, 1
+  38:0 |   38 | f9 18 21 10 ; slli a1, a1, 1
+  3c:0 |   3c | 4e fe ff ff ; jp .mulloop
+  40:0 |   40 |             ; .mulend:
+  40:0 |   40 | be 00 44 00 ; mov a0, a2
+  44:0 |   44 | 38 fc 00 00 ; ret
+  48:0 |   48 |             ; __div:
+  48:0 |   48 | fe 11 63 00 ; xor t0, a0, a1
+  4c:0 |   4c | 3e 10 42 04 ; tst a0, a0
+  50:0 |   50 | 3e 01 82 00 ; neg a2, a0
+  54:0 |   54 | be 20 82 06 ; movlt a0, a2
+  58:0 |   58 | 3e 18 43 04 ; tst a1, a1
+  5c:0 |   5c | 3e 01 83 00 ; neg a2, a1
+  60:0 |   60 | fe 20 83 06 ; movlt a1, a2
+  64:0 |   64 | 3e 18 a2 04 ; ucmp a1, a0
+  68:0 |   68 | fe 00 43 06 ; moveq a1, zr
+  6c:0 |   6c | fe 10 03 06 ; movgt a1, a0
+  70:0 |   70 | 3e 01 40 07 ; seteq a2
+  74:0 |   74 | be 20 a2 06 ; movge a0, a2
+  78:0 |   78 | cd 04 00 00 ; bge .divend
+  7c:0 |   7c | 3e 18 43 04 ; tst a1, a1
+  80:0 |   80 | 4a 04 00 00 ; beq .divend
+  84:0 |   84 | 3e 01 43 00 ; mov a2, a1
+  88:0 |   88 |             ; .divloop1:
+  88:0 |   88 | f9 18 21 10 ; slli a1, a1, 1
+  8c:0 |   8c | 3e 18 a2 04 ; ucmp a1, a0
+  90:0 |   90 | 8c ff ff ff ; blt .divloop1
+  94:0 |   94 | 52 01 00 00 ; movi a3, 0
+  98:0 |   98 |             ; .divloop2:
+  98:0 |   98 | 3e 10 a3 04 ; ucmp a0, a1
+  9c:0 |   9c | be 11 83 00 ; sub a4, a0, a1
+  a0:0 |   a0 | be 30 a2 06 ; movge a0, a4
+  a4:0 |   a4 | be 01 a0 07 ; setge a4
+  a8:0 |   a8 | 79 29 21 10 ; slli a3, a3, 1
+  ac:0 |   ac | 7e 29 46 00 ; or a3, a3, a4
+  b0:0 |   b0 | f9 18 21 00 ; srli a1, a1, 1
+  b4:0 |   b4 | 3e 18 a4 04 ; ucmp a1, a2
+  b8:0 |   b8 | 0d fe ff ff ; bge .divloop2
+  bc:0 |   bc | fe 00 42 00 ; mov a1, a0
+  c0:0 |   c0 | be 00 45 00 ; mov a0, a3
+  c4:0 |   c4 |             ; .divend:
+  c4:0 |   c4 | 3e 38 47 04 ; tst t0, t0
+  c8:0 |   c8 | 3e 01 82 00 ; neg a2, a0
+  cc:0 |   cc | be 20 82 06 ; movlt a0, a2
+  d0:0 |   d0 | 3e 01 83 00 ; neg a2, a1
+  d4:0 |   d4 | fe 20 83 06 ; movlt a1, a2
+  d8:0 |   d8 | 38 fc 00 00 ; ret
+  dc:0 |   dc |             ; __mod:
+  dc:0 |   dc | ea 0f fc ff ; stw lr, -4(sp)
+  e0:0 |   e0 | 54 08 04 00 ; subi sp, sp, 4
+  e4:0 |   e4 | 4f f6 ff ff ; jl __div
+  e8:0 |   e8 | be 00 43 00 ; mov a0, a1
+  ec:0 |   ec | 50 08 04 00 ; addi sp, sp, 4
+  f0:0 |   f0 | e8 0f fc ff ; ldw lr, -4(sp)
+  f4:0 |   f4 | 38 fc 00 00 ; ret
+  f8:0 |   f8 |             ; puts:
+  f8:0 |   f8 | e0 11 00 00 ; ldb t0, (a0)
+  fc:0 |   fc | 3e 38 47 04 ; tst t0, t0
+ 100:0 |  100 | 0a 01 00 00 ; beq .end
+ 104:0 |  104 | f1 01 01 00 ; mtio t0, COUT
+ 108:0 |  108 | 90 10 01 00 ; addi a0, a0, 1
+ 10c:0 |  10c | ce fe ff ff ; jp puts
+ 110:0 |  110 |             ; .end:
+ 110:0 |  110 | d2 01 0a 00 ; movi t0, "\n"
+ 114:0 |  114 | f1 01 01 00 ; mtio t0, COUT
+ 118:0 |  118 | 38 fc 00 00 ; ret
+ 11c:0 |  11c |             ; hexdigit:
+ 11c:0 |  11c | 78 11 09 00 ; ucmpi a0, 9
+ 120:0 |  120 | d0 10 30 00 ; addi a1, a0, "0"
+ 124:0 |  124 | 10 11 57 00 ; addi a2, a0, "a" - 10
+ 128:0 |  128 | be 20 03 06 ; selgt a0, a2, a1
+ 12c:0 |  12c | 38 fc 00 00 ; ret
+ 130:0 |  130 |             ; print_hex:
+ 130:0 |  130 | ea 0f fc ff ; stw lr, -4(sp)
+ 134:0 |  134 | fe 01 42 00 ; mov t0, a0
+ 138:0 |  138 | b9 38 9c 03 ; ubfe a0, t0, 28, 4
+ 13c:0 |  13c | 0f fe ff ff ; jl hexdigit
+ 140:0 |  140 | b1 00 01 00 ; mtio a0, COUT
+ 144:0 |  144 | b9 38 98 03 ; ubfe a0, t0, 24, 4
+ 148:0 |  148 | 4f fd ff ff ; jl hexdigit
+ 14c:0 |  14c | b1 00 01 00 ; mtio a0, COUT
+ 150:0 |  150 | b9 38 94 03 ; ubfe a0, t0, 20, 4
+ 154:0 |  154 | 8f fc ff ff ; jl hexdigit
+ 158:0 |  158 | b1 00 01 00 ; mtio a0, COUT
+ 15c:0 |  15c | b9 38 90 03 ; ubfe a0, t0, 16, 4
+ 160:0 |  160 | cf fb ff ff ; jl hexdigit
+ 164:0 |  164 | b1 00 01 00 ; mtio a0, COUT
+ 168:0 |  168 | b9 38 8c 03 ; ubfe a0, t0, 12, 4
+ 16c:0 |  16c | 0f fb ff ff ; jl hexdigit
+ 170:0 |  170 | b1 00 01 00 ; mtio a0, COUT
+ 174:0 |  174 | b9 38 88 03 ; ubfe a0, t0, 8, 4
+ 178:0 |  178 | 4f fa ff ff ; jl hexdigit
+ 17c:0 |  17c | b1 00 01 00 ; mtio a0, COUT
+ 180:0 |  180 | b9 38 84 03 ; ubfe a0, t0, 4, 4
+ 184:0 |  184 | 8f f9 ff ff ; jl hexdigit
+ 188:0 |  188 | b1 00 01 00 ; mtio a0, COUT
+ 18c:0 |  18c | b9 38 80 03 ; ubfe a0, t0, 0, 4
+ 190:0 |  190 | cf f8 ff ff ; jl hexdigit
+ 194:0 |  194 | b1 00 01 00 ; mtio a0, COUT
+ 198:0 |  198 | e8 0f fc ff ; ldw lr, -4(sp)
+ 19c:0 |  19c | 38 fc 00 00 ; ret
+ 1a0:0 |  1a0 |             ; print_dec:
+ 1a0:0 |  1a0 | ea 0f fc ff ; stw lr, -4(sp)
+ 1a4:0 |  1a4 | 6a 0c f8 ff ; stw s0, -8(sp)
+ 1a8:0 |  1a8 | aa 0c f4 ff ; stw s1, -12(sp)
+ 1ac:0 |  1ac | 54 08 18 00 ; subi sp, sp, 24
+ 1b0:0 |  1b0 | 3e 10 42 04 ; tst a0, a0
+ 1b4:0 |  1b4 | fe 00 82 00 ; neg a1, a0
+ 1b8:0 |  1b8 | 7e 1c 82 06 ; sellt s0, a1, a0
+ 1bc:0 |  1bc | cd 00 00 00 ; bge .pos
+ 1c0:0 |  1c0 | d2 01 2d 00 ; movi t0, "-"
+ 1c4:0 |  1c4 | f1 01 01 00 ; mtio t0, COUT
+ 1c8:0 |  1c8 |             ; .pos:
+ 1c8:0 |  1c8 | 92 04 00 00 ; movi s1, 0
+ 1cc:0 |  1cc |             ; .digitloop:
+ 1cc:0 |  1cc | be 00 51 00 ; mov a0, s0
+ 1d0:0 |  1d0 | d2 00 0a 00 ; movi a1, 10
+ 1d4:0 |  1d4 | 4f e7 ff ff ; jl __div
+ 1d8:0 |  1d8 | 7e 04 42 00 ; mov s0, a0
+ 1dc:0 |  1dc | fe 08 52 fc ; stbx a1, (sp, s1)
+ 1e0:0 |  1e0 | 78 89 00 00 ; ucmpi s0, 0
+ 1e4:0 |  1e4 | ca 00 00 00 ; beq .printloop
+ 1e8:0 |  1e8 | 90 94 01 00 ; addi s1, s1, 1
+ 1ec:0 |  1ec | 0e fe ff ff ; jp .digitloop
+ 1f0:0 |  1f0 |             ; .printloop:
+ 1f0:0 |  1f0 | be 08 12 fc ; ldbx a0, (sp, s1)
+ 1f4:0 |  1f4 | 90 10 30 00 ; addi a0, a0, "0"
+ 1f8:0 |  1f8 | b1 00 01 00 ; mtio a0, COUT
+ 1fc:0 |  1fc | 94 94 01 00 ; subi s1, s1, 1
+ 200:0 |  200 | 38 91 00 00 ; scmpi s1, 0
+ 204:0 |  204 | cd fe ff ff ; bge .printloop
+ 208:0 |  208 | 50 08 18 00 ; addi sp, sp, 24
+ 20c:0 |  20c | a8 0c f4 ff ; ldw s1, -12(sp)
+ 210:0 |  210 | 68 0c f8 ff ; ldw s0, -8(sp)
+ 214:0 |  214 | e8 0f fc ff ; ldw lr, -4(sp)
+ 218:0 |  218 | 38 fc 00 00 ; ret
+ 21c:0 |  21c |             ; printf:
+ 21c:0 |  21c | aa 09 fc ff ; stw a4, -4(sp)
+ 220:0 |  220 | 6a 09 f8 ff ; stw a3, -8(sp)
+ 224:0 |  224 | 2a 09 f4 ff ; stw a2, -12(sp)
+ 228:0 |  228 | ea 08 f0 ff ; stw a1, -16(sp)
+ 22c:0 |  22c | ea 0f ec ff ; stw lr, -20(sp)
+ 230:0 |  230 | 6a 0c e8 ff ; stw s0, -24(sp)
+ 234:0 |  234 | aa 0c e4 ff ; stw s1, -28(sp)
+ 238:0 |  238 | 94 0c 10 00 ; subi s1, sp, 16
+ 23c:0 |  23c | 7e 04 42 00 ; mov s0, a0
+ 240:0 |  240 | 54 08 1c 00 ; subi sp, sp, 28
+ 244:0 |  244 |             ; .loop:
+ 244:0 |  244 | e0 89 00 00 ; ldb t0, (s0)
+ 248:0 |  248 | 3e 38 47 04 ; tst t0, t0
+ 24c:0 |  24c | 0a 06 00 00 ; beq .end
+ 250:0 |  250 | 78 39 25 00 ; ucmpi t0, "%"
+ 254:0 |  254 | cb 04 00 00 ; bne .put
+ 258:0 |  258 | 50 8c 01 00 ; addi s0, s0, 1
+ 25c:0 |  25c | e0 89 00 00 ; ldb t0, (s0)
+ 260:0 |  260 | 78 39 78 00 ; ucmpi t0, "x"
+ 264:0 |  264 | 8b 01 00 00 ; bne .notx
+ 268:0 |  268 | a8 90 00 00 ; ldw a0, (s1)
+ 26c:0 |  26c | 90 94 04 00 ; addi s1, s1, 4
+ 270:0 |  270 | 0f ec ff ff ; jl print_hex
+ 274:0 |  274 | 50 8c 01 00 ; addi s0, s0, 1
+ 278:0 |  278 | ce fc ff ff ; jp .loop
+ 27c:0 |  27c |             ; .notx:
+ 27c:0 |  27c | 78 39 64 00 ; ucmpi t0, "d"
+ 280:0 |  280 | 8b 01 00 00 ; bne .notd
+ 284:0 |  284 | a8 90 00 00 ; ldw a0, (s1)
+ 288:0 |  288 | 90 94 04 00 ; addi s1, s1, 4
+ 28c:0 |  28c | 4f f1 ff ff ; jl print_dec
+ 290:0 |  290 | 50 8c 01 00 ; addi s0, s0, 1
+ 294:0 |  294 | 0e fb ff ff ; jp .loop
+ 298:0 |  298 |             ; .notd:
+ 298:0 |  298 | 12 02 25 00 ; movi t1, "%"
+ 29c:0 |  29c | 31 02 01 00 ; mtio t1, COUT
+ 2a0:0 |  2a0 |             ; .put:
+ 2a0:0 |  2a0 | f1 01 01 00 ; mtio t0, COUT
+ 2a4:0 |  2a4 | 50 8c 01 00 ; addi s0, s0, 1
+ 2a8:0 |  2a8 | ce f9 ff ff ; jp .loop
+ 2ac:0 |  2ac |             ; .end:
+ 2ac:0 |  2ac | 50 08 1c 00 ; addi sp, sp, 28
+ 2b0:0 |  2b0 | a8 0c e4 ff ; ldw s1, -28(sp)
+ 2b4:0 |  2b4 | 68 0c e8 ff ; ldw s0, -24(sp)
+ 2b8:0 |  2b8 | e8 0f ec ff ; ldw lr, -20(sp)
+ 2bc:0 |  2bc | 38 fc 00 00 ; ret
+ 2c0:0 |  2c0 |             ; timed:
+ 2c0:0 |  2c0 | ea 0f fc ff ; stw lr, -4(sp)
+ 2c4:0 |  2c4 | 6a 0c f8 ff ; stw s0, -8(sp)
+ 2c8:0 |  2c8 | 54 08 08 00 ; subi sp, sp, 8
+ 2cc:0 |  2cc | fe 01 42 00 ; mov t0, a0
+ 2d0:0 |  2d0 | be 00 43 00 ; mov a0, a1
+ 2d4:0 |  2d4 | fe 00 44 00 ; mov a1, a2
+ 2d8:0 |  2d8 | 3e 01 45 00 ; mov a2, a3
+ 2dc:0 |  2dc | 7e 01 46 00 ; mov a3, a4
+ 2e0:0 |  2e0 | 70 04 02 00 ; mfio s0, CLK
+ 2e4:0 |  2e4 | 78 3c 00 00 ; jlr t0
+ 2e8:0 |  2e8 | f0 00 02 00 ; mfio a1, CLK
+ 2ec:0 |  2ec | fe 18 91 00 ; sub a1, a1, s0
+ 2f0:0 |  2f0 | d4 18 03 00 ; subi a1, a1, 3
+ 2f4:0 |  2f4 | 50 08 08 00 ; addi sp, sp, 8
+ 2f8:0 |  2f8 | 68 0c f8 ff ; ldw s0, -8(sp)
+ 2fc:0 |  2fc | e8 0f fc ff ; ldw lr, -4(sp)
+ 300:0 |  300 | 38 fc 00 00 ; ret
+ 304:0 |  304 |             ; udf_handler:
+ 304:0 |  304 | ea 0f fc ff ; stw lr, -4(sp)
+ 308:0 |  308 | 54 08 04 00 ; subi sp, sp, 4
+ 30c:0 |  30c | b4 00 20 00 ; adr a0, .str0
+ 310:0 |  310 | fd 20 04 10 ; mfsr a1, einfo
+ 314:0 |  314 | 3d 21 03 10 ; mfsr a2, elr
+ 318:0 |  318 | 14 21 04 00 ; subi a2, a2, 4
+ 31c:0 |  31c | 0f f0 ff ff ; jl printf
+ 320:0 |  320 | 50 08 04 00 ; addi sp, sp, 4
+ 324:0 |  324 | e8 0f fc ff ; ldw lr, -4(sp)
+ 328:0 |  328 | 3d 08 00 00 ; eret
+ 32c:0 |  32c |             ; .str0:
+ 32c:0 |  32c | 75 6e 64 65 66 69 6e 65 64 20 69 6e 73 74 72 75 63 74 69 6f 6e 20 25 78 20 61 74 20 25 78 0a 00 ; ds "undefined instruction %x at %x\n"
+ 34c:0 |  34c |             ; setup_timer:
+ 34c:0 |  34c | d6 01 f3 01 ; movi t0, -500
+ 350:0 |  350 | f1 01 04 00 ; mtio t0, TMRVAL
+ 354:0 |  354 | d2 01 0b 00 ; movi t0, 0b1011
+ 358:0 |  358 | f1 01 03 00 ; mtio t0, TMRCNT
+ 35c:0 |  35c | fd 29 00 10 ; mtsr t0, ie
+ 360:0 |  360 | 38 fc 00 00 ; ret
+ 364:0 |  364 |             ; set_timer:
+ 364:0 |  364 | f9 19 63 10 ; slli t0, a1, 3
+ 368:0 |  368 | 39 21 21 10 ; slli a2, a2, 1
+ 36c:0 |  36c | fe 39 44 00 ; or t0, t0, a2
+ 370:0 |  370 | d2 39 01 00 ; ori t0, t0, 1
+ 374:0 |  374 | be 00 82 00 ; neg a0, a0
+ 378:0 |  378 | b1 00 04 00 ; mtio a0, TMRVAL
+ 37c:0 |  37c | f1 01 03 00 ; mtio t0, TMRCNT
+ 380:0 |  380 | 38 fc 00 00 ; ret
+ 384:0 |  384 |             ; stop_timer:
+ 384:0 |  384 | 31 00 03 00 ; mtio zr, TMRCNT
+ 388:0 |  388 | 38 fc 00 00 ; ret
+ 38c:0 |  38c |             ; delay:
+ 38c:0 |  38c | f0 01 02 00 ; mfio t0, CLK
+ 390:0 |  390 | be 10 07 00 ; add a0, a0, t0
+ 394:0 |  394 |             ; .loop:
+ 394:0 |  394 | f0 01 02 00 ; mfio t0, CLK
+ 398:0 |  398 | 3e 38 a2 04 ; ucmp t0, a0
+ 39c:0 |  39c | 8c ff ff ff ; blt .loop
+ 3a0:0 |  3a0 | 38 fc 00 00 ; ret
+ 3a4:0 |  3a4 |             ; timer_handler:
+ 3a4:0 |  3a4 | aa 08 fc ff ; stw a0, -4(sp)
+ 3a8:0 |  3a8 | b0 00 03 00 ; mfio a0, TMRCNT
+ 3ac:0 |  3ac | 95 10 04 00 ; andni a0, a0, 0b100
+ 3b0:0 |  3b0 | b1 00 03 00 ; mtio a0, TMRCNT
+ 3b4:0 |  3b4 | b4 00 2c 00 ; adr a0, user_timer_handler
+ 3b8:0 |  3b8 | a8 10 00 00 ; ldw a0, (a0)
+ 3bc:0 |  3bc | 3e 10 a0 04 ; ucmp a0, zr
+ 3c0:0 |  3c0 | 8a 01 00 00 ; beq .l1
+ 3c4:0 |  3c4 | ea 0f f8 ff ; stw lr, -8(sp)
+ 3c8:0 |  3c8 | 54 08 08 00 ; subi sp, sp, 8
+ 3cc:0 |  3cc | 78 14 00 00 ; jlr a0
+ 3d0:0 |  3d0 | 50 08 08 00 ; addi sp, sp, 8
+ 3d4:0 |  3d4 | e8 0f f8 ff ; ldw lr, -8(sp)
+ 3d8:0 |  3d8 |             ; .l1:
+ 3d8:0 |  3d8 | a8 08 fc ff ; ldw a0, -4(sp)
+ 3dc:0 |  3dc | 3d 08 00 00 ; eret
+ 3e0:0 |  3e0 |             ; user_timer_handler:
+ 3e0:0 |  3e0 | 00 00 00 00 ; dw 0
+ 3e4:0 |  3e4 |             ; main:
+ 3e4:0 |  3e4 | ea 0f fc ff ; stw lr, -4(sp)
+ 3e8:0 |  3e8 | 54 08 04 00 ; subi sp, sp, 4
+ 3ec:0 |  3ec | b4 00 18 00 ; adr a0, .str
+ 3f0:0 |  3f0 | d2 00 34 12 ; movi a1, 0x1234
+ 3f4:0 |  3f4 | 8f e2 ff ff ; jl printf
+ 3f8:0 |  3f8 | 50 08 04 00 ; addi sp, sp, 4
+ 3fc:0 |  3fc | e8 0f fc ff ; ldw lr, -4(sp)
+ 400:0 |  400 | 38 fc 00 00 ; ret
+ 404:0 |  404 |             ; .str:
+ 404:0 |  404 | 25 78 00    ; ds "%x"
