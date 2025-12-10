@@ -26,6 +26,7 @@
         <File path="rtl/stage_mem.sv" type="file.verilog" enable="1"/>
         <File path="rtl/stage_wb.sv" type="file.verilog" enable="1"/>
         <File path="rtl/top.sv" type="file.verilog" enable="1"/>
+        <File path="rtl/uart.sv" type="file.verilog" enable="1"/>
         <File path="rtl/wb_out_if.sv" type="file.verilog" enable="1"/>
         <File path="rtl/ws2812.sv" type="file.verilog" enable="1"/>
         <File path="rtl/top.cst" type="file.cst" enable="1"/>

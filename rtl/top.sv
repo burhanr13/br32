@@ -1,7 +1,9 @@
 
 typedef enum logic [15:0] {
     IO_LED = 'h1000,
-    IO_RGB = 'h1001
+    IO_RGB = 'h1001,
+    IO_SIOCNT = 'h1010,
+    IO_SIODAT = 'h1011
 } io_e;
 
 module top #(
@@ -11,7 +13,9 @@ module top #(
     input rstn,
 
     output [5:0] led_o,
-    output ws2812_o
+    output ws2812_o,
+    input uart_rx_i,
+    output uart_tx_o
 );
     wire rst = !rstn;
     wire irq  /*verilator public */ = 0;
@@ -66,13 +70,28 @@ module top #(
     assign led_o = ~reg_led;
 
     ws2812 rgbcnt (
-        .clk(clk),
-        .rst(rst),
+        .clk,
+        .rst,
         .wr(io_w && io_addr == IO_RGB),
         .r(io_wdata[7:0]),
         .g(io_wdata[15:8]),
         .b(io_wdata[23:16]),
-        .ws2812_o(ws2812_o)
+        .ws2812_o
+    );
+
+    wire [1:0] siocnt;
+    wire [7:0] siodat;
+    uart uartcnt(
+        .clk,
+        .rst,
+        .rx_ready(siocnt[1]),
+        .tx_busy(siocnt[0]),
+        .tx_data(io_wdata[7:0]),
+        .rx_data(siodat),
+        .tx_wr(io_w && io_addr == IO_SIODAT),
+        .rx_rd(io_r && io_addr == IO_SIODAT),
+        .uart_rx(uart_rx_i),
+        .uart_tx(uart_tx_o)
     );
 
     always_comb begin
@@ -80,6 +99,8 @@ module top #(
         automatic logic [31:0] io_val = 0;
         case (io_addr)
             IO_LED:  io_val = {26'b0, reg_led};
+            IO_SIOCNT: io_val = {30'b0, siocnt};
+            IO_SIODAT: io_val = {24'b0, siodat};
             default: io_ren = 0;
         endcase
         io_rdata = io_ren ? io_val : 'z;
@@ -96,7 +117,6 @@ module top #(
     end
 
     core core0 (.*);
-
 
     initial begin
         $dumpfile("trace.vcd");

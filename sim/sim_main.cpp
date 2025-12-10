@@ -36,6 +36,8 @@ enum class IoPort {
     CLK = 0x0002,
     TMRCNT = 0x0003,
     TMRVAL = 0x0004,
+
+    SIODAT = 0x1011,
 };
 
 u32 tmrval;
@@ -61,6 +63,7 @@ void rio(u16 port, u32& data) {
         case IoPort::CLK: data = cycles; break;
         case IoPort::TMRCNT: data = tmrcnt.raw; break;
         case IoPort::TMRVAL: data = tmrval; break;
+        case IoPort::SIODAT: break;
     }
 }
 
@@ -70,6 +73,7 @@ void wio(u16 port, u32 data) {
             exit_code = data;
             done = true;
             break;
+        case IoPort::SIODAT:
         case IoPort::COUT: fputc(data, stdout); break;
         case IoPort::CLK: break;
         case IoPort::TMRCNT: {

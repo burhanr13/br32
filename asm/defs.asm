@@ -8,6 +8,9 @@
 #const TMRVAL = 0x0004
 
 #const LED = 0x1000
+#const RGB = 0x1001
+#const SIOCNT = 0x1010
+#const SIODAT = 0x1011
 
 rst_vector:
     jp start
@@ -23,6 +26,7 @@ start:
     movi sp, 0x10000
     jl main
     mtio a0, HALT
+    jp $
 
 __mul:
     movi a2, 0
@@ -94,16 +98,30 @@ __mod:
     ldw lr, -4(sp)
     ret
 
+putc:
+    mtio a0, SIODAT
+.wait:
+    mfio a0, SIOCNT
+    tsti a0, 1
+    bne .wait
+    ret
+
 puts:
-    ldb t0, (a0)
-    tst t0, t0
+    stw lr, -4(sp)
+    subi sp, sp, 4
+    mov t0, a0
+.loop:
+    ldb a0, (t0)
+    tst a0, a0
     beq .end
-    mtio t0, COUT
-    addi a0, a0, 1
-    jp puts
+    jl putc
+    addi t0, t0, 1
+    jp .loop
 .end:
-    movi t0, "\n"
-    mtio t0, COUT
+    movi a0, "\n"
+    jl putc
+    addi sp, sp, 4
+    ldw lr, -4(sp)
     ret
 
 hexdigit:
@@ -118,28 +136,28 @@ print_hex:
     mov t0, a0
     ubfe a0, t0, 28, 4
     jl hexdigit
-    mtio a0, COUT
+    jl putc
     ubfe a0, t0, 24, 4
     jl hexdigit
-    mtio a0, COUT
+    jl putc
     ubfe a0, t0, 20, 4
     jl hexdigit
-    mtio a0, COUT
+    jl putc
     ubfe a0, t0, 16, 4
     jl hexdigit
-    mtio a0, COUT
+    jl putc
     ubfe a0, t0, 12, 4
     jl hexdigit
-    mtio a0, COUT
+    jl putc
     ubfe a0, t0, 8, 4
     jl hexdigit
-    mtio a0, COUT
+    jl putc
     ubfe a0, t0, 4, 4
     jl hexdigit
-    mtio a0, COUT
+    jl putc
     ubfe a0, t0, 0, 4
     jl hexdigit
-    mtio a0, COUT
+    jl putc
     ldw lr, -4(sp)
     ret
 
@@ -153,8 +171,8 @@ print_dec:
     neg a1, a0
     sellt s0, a1, a0
     bge .pos
-    movi t0, "-"
-    mtio t0, COUT
+    movi a0, "-"
+    jl putc
 .pos:
     movi s1, 0
 .digitloop:
@@ -170,7 +188,7 @@ print_dec:
 .printloop:
     ldbx a0, (sp, s1)
     addi a0, a0, "0"
-    mtio a0, COUT
+    jl putc
     subi s1, s1, 1
     scmpi s1, 0
     bge .printloop
@@ -194,10 +212,10 @@ printf:
     subi sp, sp, 28
 
 .loop:
-    ldb t0, (s0)
-    tst t0, t0
+    ldb a0, (s0)
+    tst a0, a0
     beq .end
-    ucmpi t0, "%"
+    ucmpi a0, "%"
     bne .put
     addi s0, s0, 1
     ldb t0, (s0)
@@ -217,10 +235,12 @@ printf:
     addi s0, s0, 1
     jp .loop
 .notd:
-    movi t1, "%"
-    mtio t1, COUT
+    mov t0, a0
+    movi a0, "%"
+    jl putc
+    mov a0, t0
 .put:
-    mtio t0, COUT
+    jl putc
     addi s0, s0, 1
     jp .loop
 .end:
