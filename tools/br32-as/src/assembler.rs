@@ -2,6 +2,8 @@ use std::{
     collections::HashMap,
     fs::File,
     io::{BufReader, Write},
+    mem,
+    path::Path,
 };
 
 use crate::tokenize::{Token, next_token};
@@ -140,7 +142,7 @@ fn expr_primary(s: &mut State) -> u32 {
         if let Some(&v) = s.constants.get(&x) {
             v
         } else {
-            error!(s, "unexpected label {}", x)
+            error!(s, "unexpected label or undefined constant '{}'", x)
         }
     } else {
         error!(s, "expected constant expression")
@@ -238,10 +240,8 @@ fn label_expr(s: &mut State, mut k: PatchKind) -> Patch {
                     && k == PatchKind::Abs32
                     && let Some(sa) = sym_addr(s, x)
                 {
+                    advance(s);
                     k = PatchKind::Rel32;
-                    let Some(Token::Ident(l2)) = advance(s) else {
-                        unreachable!()
-                    };
                     addend -= sa as i32;
                 } else {
                     addend -= expr_prod(s) as i32;
@@ -358,8 +358,8 @@ fn parse_memx(s: &mut State) -> (u32, u32, u32, u32) {
     (rt, ra, rb, i)
 }
 
-pub fn assemble(s: &mut State, file: &str) {
-    s.file = String::from(file);
+fn parse(s: &mut State, file: &str) {
+    s.file = file.to_string();
     s.line = 0;
     let Ok(fp) = File::open(&s.file).map(BufReader::new) else {
         error!(s, "cannot open file")
@@ -673,6 +673,24 @@ pub fn assemble(s: &mut State, file: &str) {
                     s.globals.entry(x).or_default();
                 }
             }
+            ".include" => {
+                let ifile = expect!(s, StringLit(ifile));
+                let fullpath = Path::new(file)
+                    .parent()
+                    .unwrap()
+                    .join(str::from_utf8(&ifile).unwrap());
+                let oldfp = s.fp.take();
+                let oldfile = mem::take(&mut s.file);
+                let oldline = s.line;
+                let oldnextchr = s.nextchar.take();
+                let oldnexttok = s.nexttok.take();
+                parse(s, fullpath.to_str().unwrap());
+                s.fp = oldfp;
+                s.file = oldfile;
+                s.line = oldline;
+                s.nextchar = oldnextchr;
+                s.nexttok = oldnexttok;
+            }
             l => {
                 expect!(s, Colon);
 
@@ -683,7 +701,7 @@ pub fn assemble(s: &mut State, file: &str) {
                 let idx = s.symt.len();
                 if l.starts_with('.') {
                     if s.locals.contains_key(l) {
-                        error!(s, "duplicate label {}", l);
+                        error!(s, "duplicate label '{}'", l);
                     }
                     s.locals.insert(l.to_string(), idx);
                 } else {
@@ -697,12 +715,12 @@ pub fn assemble(s: &mut State, file: &str) {
 
                     if s.globals.contains_key(l) {
                         if s.globals[l].is_some() {
-                            error!(s, "duplicate label {}", l);
+                            error!(s, "duplicate label '{}'", l);
                         }
                         s.globals.insert(l.to_string(), Some(idx));
                     } else {
                         if s.filelocals.contains_key(l) {
-                            error!(s, "duplicate label {}", l);
+                            error!(s, "duplicate label '{}'", l);
                         }
                         s.filelocals.insert(l.to_string(), idx);
                     }
@@ -716,6 +734,10 @@ pub fn assemble(s: &mut State, file: &str) {
 
         expect!(s, NewLine);
     }
+}
+
+pub fn assemble(s: &mut State, file: &str) {
+    parse(s, file);
 
     let ps = std::mem::take(&mut s.localpatches);
     for p in ps {

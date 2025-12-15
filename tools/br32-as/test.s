@@ -125,3 +125,7 @@ jp .+4
 jp .-20
 jp l4
 
+
+.include "test.inc"
+
+movi a0, A+B+C
