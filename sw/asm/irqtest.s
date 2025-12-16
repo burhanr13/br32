@@ -1,5 +1,6 @@
-#include "defs.asm"
-
+    .include "constants.inc"
+    
+    .global main
 main:
     stw lr, -4(sp)
     subi sp, sp, 4
@@ -136,5 +137,5 @@ fail:
     ret
 
 
-msg_success: ds "all tests passed\n"
-msg_fail: ds "failed test %d\n"
+msg_success: .string "all tests passed\n"
+msg_fail: .string "failed test %d\n"

@@ -1,0 +1,10 @@
+.set HALT, 0x0000
+.set COUT, 0x0001
+.set CLK, 0x0002
+.set TMRCNT, 0x0003
+.set TMRVAL, 0x0004
+
+.set LED, 0x1000
+.set RGB, 0x1001
+.set SIOCNT, 0x1010
+.set SIODAT, 0x1011

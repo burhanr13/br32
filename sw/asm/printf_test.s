@@ -1,5 +1,4 @@
-#include "defs.asm"
-
+    .global main
 main:
     stw lr, -4(sp)
     subi sp, sp, 4
@@ -22,5 +21,5 @@ main:
     ldw lr, -4(sp)
     ret
 
-.str0: ds "a1=%x a2=%x a3=%x a4=%x\n"
-.str1: ds "%d %d %d %d %d\n"
+.str0: .string "a1=%x a2=%x a3=%x a4=%x\n"
+.str1: .string "%d %d %d %d %d\n"

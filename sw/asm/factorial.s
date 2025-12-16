@@ -1,5 +1,3 @@
-#include "rules.asm"
-
 main:
     movi a0, 0
     jl factorial

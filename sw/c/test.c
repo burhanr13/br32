@@ -129,3 +129,5 @@ void strcpy(char* dst, char* src) {
 //     if ((b & (1 << 10)) != 0) return 1;
 //     return 0;
 // }
+
+int main() {}

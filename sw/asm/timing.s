@@ -1,5 +1,4 @@
-#include "defs.asm"
-
+    .global main
 main:
     stw lr, -4(sp)
     subi sp, sp, 4
@@ -54,15 +53,15 @@ mem:
     addi a0, a0, 1 ; 1
     ldb a0, (sp) ; 2
     stb a0, -2(sp) ; 2
-    jp $+8 ; 2
+    jp .+8 ; 2
     ldw a0, (sp) ; 0
     add a0, a0, a1 ; 1
     ldw zr, (sp) ; 2
     mov a0, zr ; 1
     ucmpi zr, 1 ; 1
-    jp $+8 ; 2
+    jp .+8 ; 2
     ucmpi zr, 0 ; 0
-    bne $+16 ; 2
+    bne .+16 ; 2
     ldw a0, (a0) ; 0
     ldw a0, (a0) ; 0
     ldw a0, (a0) ; 0
@@ -72,6 +71,6 @@ systemcall:
     scall 0
     ret
 
-s1: ds "nothing takes %d\n"
-s2: ds "something takes %d\n"
-s3: ds "%d\n"
+s1: .string "nothing takes %d\n"
+s2: .string "something takes %d\n"
+s3: .string "%d\n"

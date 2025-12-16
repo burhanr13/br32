@@ -1,16 +1,4 @@
-#once
-#include "rules.asm"
-
-#const HALT = 0x0000
-#const COUT = 0x0001
-#const CLK = 0x0002
-#const TMRCNT = 0x0003
-#const TMRVAL = 0x0004
-
-#const LED = 0x1000
-#const RGB = 0x1001
-#const SIOCNT = 0x1010
-#const SIODAT = 0x1011
+.include "constants.inc"
 
 rst_vector:
     jp start
@@ -21,13 +9,14 @@ scall_vector:
 udf_vector:
     jp udf_handler
 
-
+    .global start
 start:
     movi sp, 0x10000
     jl main
     mtio a0, HALT
-    jp $
+    jp .
 
+    .global __mul
 __mul:
     movi a2, 0
 .mulloop:
@@ -43,6 +32,7 @@ __mul:
     mov a0, a2
     ret
 
+    .global __div
 __div:
     ; a0 : dividend
     ; a1 : divisor
@@ -89,6 +79,7 @@ __div:
     movlt a1, a2
     ret
 
+    .global __mod
 __mod:
     stw lr, -4(sp)
     subi sp, sp, 4
@@ -98,6 +89,7 @@ __mod:
     ldw lr, -4(sp)
     ret
 
+    .global putc
 putc:
     mtio a0, SIODAT
 .wait:
@@ -106,6 +98,7 @@ putc:
     bne .wait
     ret
 
+    .global puts
 puts:
     stw lr, -4(sp)
     subi sp, sp, 4
@@ -118,7 +111,7 @@ puts:
     addi t0, t0, 1
     jp .loop
 .end:
-    movi a0, "\n"
+    movi a0, '\n'
     jl putc
     addi sp, sp, 4
     ldw lr, -4(sp)
@@ -126,8 +119,8 @@ puts:
 
 hexdigit:
     ucmpi a0, 9
-    addi a1, a0, "0"
-    addi a2, a0, "a" - 10
+    addi a1, a0, '0'
+    addi a2, a0, 'a' - 10
     selgt a0, a2, a1
     ret
 
@@ -171,7 +164,7 @@ print_dec:
     neg a1, a0
     sellt s0, a1, a0
     bge .pos
-    movi a0, "-"
+    movi a0, '-'
     jl putc
 .pos:
     movi s1, 0
@@ -187,7 +180,7 @@ print_dec:
     jp .digitloop
 .printloop:
     ldbx a0, (sp, s1)
-    addi a0, a0, "0"
+    addi a0, a0, '0'
     jl putc
     subi s1, s1, 1
     scmpi s1, 0
@@ -199,6 +192,7 @@ print_dec:
     ldw lr, -4(sp)
     ret
 
+    .global printf
 printf:
     stw a4, -4(sp)
     stw a3, -8(sp)
@@ -215,11 +209,11 @@ printf:
     ldb a0, (s0)
     tst a0, a0
     beq .end
-    ucmpi a0, "%"
+    ucmpi a0, '%'
     bne .put
     addi s0, s0, 1
     ldb t0, (s0)
-    ucmpi t0, "x"
+    ucmpi t0, 'x'
     bne .notx
     ldw a0, (s1)
     addi s1, s1, 4
@@ -227,7 +221,7 @@ printf:
     addi s0, s0, 1
     jp .loop
 .notx:
-    ucmpi t0, "d"
+    ucmpi t0, 'd'
     bne .notd
     ldw a0, (s1)
     addi s1, s1, 4
@@ -236,7 +230,7 @@ printf:
     jp .loop
 .notd:
     mov t0, a0
-    movi a0, "%"
+    movi a0, '%'
     jl putc
     mov a0, t0
 .put:
@@ -250,6 +244,7 @@ printf:
     ldw lr, -20(sp)
     ret
     
+    .global timed
 timed:
     stw lr, -4(sp)
     stw s0, -8(sp)
@@ -283,9 +278,9 @@ udf_handler:
     addi sp, sp, 4
     ldw lr, -4(sp)
     eret
-.str0: ds "undefined instruction %x at %x\n"
+.str0: .string "undefined instruction %x at %x\n"
 
-#align 32
+    .align 4
 setup_timer:
     movi t0, -500 
     mtio t0, TMRVAL
@@ -294,6 +289,7 @@ setup_timer:
     mtsr t0, ie ; enable interrupts
     ret
 
+    .global set_timer
 set_timer: ; void set_timer(int period, bool repeat, bool enableIrq)
     slli t0, a1, 3
     slli a2, a2, 1
@@ -304,10 +300,12 @@ set_timer: ; void set_timer(int period, bool repeat, bool enableIrq)
     mtio t0, TMRCNT
     ret
 
+    .global stop_timer
 stop_timer:
     mtio zr, TMRCNT
     ret
 
+    .global delay
 delay:
     mfsr t0, sysclk
     add a0, a0, t0
@@ -336,5 +334,6 @@ timer_handler:
     ldw a0, -4(sp)
     eret
 
+    .global user_timer_handler
 user_timer_handler:
-    dw 0
+    .res 4

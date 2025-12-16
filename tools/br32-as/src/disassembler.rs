@@ -141,12 +141,11 @@ pub fn disassemble(filename: &str) {
                             if opc & 8 != 0 {
                                 imm <<= 16
                             }
-                            if opc & 4 != 0 {
-                                if opc & 3 != 2 {
-                                    imm = imm.wrapping_neg();
-                                } else {
-                                    imm = !imm;
-                                }
+                            if opc & 3 != 2 && opc & 4 == 0 {
+                                imm = imm.wrapping_neg();
+                            }
+                            if opc & 3 == 2 && opc & 4 != 0 {
+                                imm = !imm;
                             }
                             match opc & 3 {
                                 0 => print!("scmpi {}, {}", REGS[ra], imm as i32),

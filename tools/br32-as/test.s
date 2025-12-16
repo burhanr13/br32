@@ -16,6 +16,10 @@ movi t0, 0x12345678
 
 scmpi t0, 0
 ucmpi t0, 0
+ucmpi t0, 100
+scmpi t0, 0xffff
+scmpi t0, -1
+scmpi t0, 0xffff_0000
 scmpi t0, 0x8000_0000
 tsti t0, 0xfafaffff
 

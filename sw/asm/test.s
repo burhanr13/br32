@@ -1,7 +1,4 @@
-#include "rules.asm"
-
-#include "defs.asm"
-
+    .global main
 main:
     stw lr, -4(sp)
     subi sp, sp, 8
@@ -24,4 +21,4 @@ main:
     addi sp, sp, 8
     ldw lr, -4(sp)
     ret
-.str: ds "%x %x %x %x %x"
+.str: .string "%x %x %x %x %x"

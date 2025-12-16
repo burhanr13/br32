@@ -1,5 +1,4 @@
-#include "defs.asm"
-
+    .global main
 main:
     stw lr, -4(sp)
     subi sp, sp, 4
@@ -11,4 +10,4 @@ main:
     addi sp, sp, 4
     ret 
 
-.str: #d "hello world\0"
+.str: .string "hello world\n"

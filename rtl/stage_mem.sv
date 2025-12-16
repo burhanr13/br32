@@ -39,9 +39,9 @@ module stage_mem (
 
     reg scall, eret, udf;
 
-    reg  link;
+    reg link;
 
-    reg  bubble  /*verilator public*/;
+    reg bubble  /*verilator public*/;
 
     wire [31:0] data_rdata_sh = data_rdata >> {MEM.alu_res[1:0], 3'b0};
 
@@ -79,7 +79,7 @@ module stage_mem (
     assign data_r = EX.mem_r && !EX.bubble && !exn;
     assign data_w = EX.mem_w && !EX.bubble && !exn;
     assign data_sz = EX.mem_sz;
-    assign data_addr = EX.alu_res;
+    assign data_addr = EX.mem_addr;
     assign data_wdata = EX.op3;
 
     always_ff @(posedge clk) begin
@@ -110,10 +110,10 @@ module stage_mem (
 
         io_r_o   <= EX.io_r && !EX.bubble && !exn;
         io_w_o   <= EX.io_w && !EX.bubble && !exn;
-        io_addr  <= EX.alu_res[15:0];
+        io_addr  <= EX.mem_addr[15:0];
         io_wdata <= EX.op3;
 
-        sr_addr  <= EX.alu_res[15:0];
+        sr_addr  <= EX.mem_addr[15:0];
     end
 
 endmodule

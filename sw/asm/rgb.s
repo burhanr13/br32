@@ -1,9 +1,7 @@
-#include "rules.asm"
+.set CLKSPEED, 27_000_000
 
-#const CLKSPEED = 27_000_000
-
-#const LED = 0x1000
-#const RGBLED = 0x1001
+.set LED, 0x1000
+.set RGBLED, 0x1001
 
 start:
     movi s0, 0
@@ -30,9 +28,9 @@ delay:
     ret
 
 colors:
-    dw 0x1e64ff
-    dw 0xff641e
-    dw 0x64ff1e
-    dw 0x641eff
-    dw 0xff1e64
-    dw 0x1eff64
+    .word 0x1e64ff
+    .word 0xff641e
+    .word 0x64ff1e
+    .word 0x641eff
+    .word 0xff1e64
+    .word 0x1eff64

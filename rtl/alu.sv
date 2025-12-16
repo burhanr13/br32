@@ -4,12 +4,17 @@ module alu (
     input cond_true,
     input [31:0] op1,
     input [31:0] op2_i,
+    input [1:0] op2_sh,
+    output logic [31:0] add_out,
     output logic [31:0] res,
     output logic [1:0] cmp_res
 );
-    import alu_pkg::*;
+    typedef enum {
+        EQ,
+        LT
+    } cmp_res_e;
 
-    wire [31:0] op2 = op2_i ^ {32{opc[2]}};
+    wire [31:0] op2 = (op2_i ^ {32{opc[2]}}) << op2_sh;
     wire [4:0] shamt = op2_i[4:0];
     wire [4:0] shmask = imm ? op2_i[9:5] : shamt & ~{5{opc[2]}};
 
@@ -17,6 +22,7 @@ module alu (
     wire [31:0] sum;
     wire cout;
     assign {cout, sum} = op1 + op2 + {31'b0, cin};
+    assign add_out = sum;
 
     wire [31:0] and_res = op1 & op2;
 

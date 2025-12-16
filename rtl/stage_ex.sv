@@ -31,16 +31,18 @@ module stage_ex (
         .opc(alu_opc),
         .imm(op2_imm),
         .op1(op1),
-        .op2_i(op2_shift ? op2 << EX.mem_sz : op2),
+        .op2_i(op2),
+        .op2_sh(op2_shift ? EX.mem_sz : 0),
         .cond_true(cond_true),
         .res(EX.alu_res),
+        .add_out(EX.mem_addr),
         .cmp_res(cmp_res)
     );
 
     always_comb begin
         automatic logic stall;
 
-        stall = MEM.stall;
+        stall   = MEM.stall;
 
         rif.rs3 = rs3;
 

@@ -1,8 +1,7 @@
-#include "rules.asm"
 
-#const CLKSPEED = 27_000_000
+.set CLKSPEED, 27_000_000
 
-#const LED = 0x1000
+.set LED, 0x1000
 
 start:
     movi s0, 0

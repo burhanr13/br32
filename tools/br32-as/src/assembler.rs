@@ -1,7 +1,7 @@
 use std::{
-    fs::File,
+    fs::{self, File},
     io::{BufReader, Write},
-    mem,
+    iter, mem,
     path::Path,
 };
 
@@ -349,6 +349,8 @@ impl State {
             if check!(self, NewLine).is_some() {
                 continue;
             }
+            let mut needsnl = true;
+
             let id = expect!(self, Ident(id));
 
             match id.as_str() {
@@ -604,6 +606,10 @@ impl State {
                     let a = self.expr();
                     self.align(a as usize);
                 }
+                ".res" => {
+                    let n = self.expr();
+                    self.code.extend(iter::repeat_n(0, n as usize));
+                }
                 ".byte" => loop {
                     if let Some(Token::StringLit(v)) = check!(self, StringLit(_)) {
                         self.code.extend(v);
@@ -640,17 +646,6 @@ impl State {
                         break;
                     }
                 },
-                ".global" => {
-                    let x = expect!(self, Ident(x));
-                    if x.starts_with('.') {
-                        error!(self, "cannot make this global");
-                    }
-                    if let Some(i) = self.locals.remove(&x) {
-                        self.globals.insert(x, Some(i));
-                    } else {
-                        self.globals.entry(x).or_default();
-                    }
-                }
                 ".include" => {
                     let ifile = expect!(self, StringLit(ifile));
                     let fullpath = Path::new(file)
@@ -669,6 +664,17 @@ impl State {
                     self.nextchar = oldnextchr;
                     self.nexttok = oldnexttok;
                 }
+                ".global" => {
+                    let x = expect!(self, Ident(x));
+                    if x.starts_with('.') {
+                        error!(self, "cannot make this global");
+                    }
+                    if let Some(i) = self.locals.remove(&x) {
+                        self.globals.insert(x, Some(i));
+                    } else {
+                        self.globals.entry(x).or_default();
+                    }
+                }
                 l => {
                     expect!(self, Colon);
 
@@ -683,7 +689,7 @@ impl State {
                         }
                         self.locals.insert(l.to_string(), idx);
                     } else {
-                        let ps = std::mem::take(&mut self.localpatches);
+                        let ps = mem::take(&mut self.localpatches);
                         for p in ps {
                             if !self.apply_patch(&p) {
                                 error!(p, "undefined label '{}'", p.sym);
@@ -707,17 +713,20 @@ impl State {
                         addr: self.code.len(),
                         name: l.to_string(),
                     });
+                    needsnl = false;
                 }
             }
 
-            expect!(self, NewLine);
+            if needsnl {
+                expect!(self, NewLine);
+            }
         }
     }
 
     pub fn assemble(&mut self, file: &str) {
         self.parse(file);
 
-        let ps = std::mem::take(&mut self.localpatches);
+        let ps = mem::take(&mut self.localpatches);
         for p in ps {
             if !self.apply_patch(&p) {
                 error!(p, "undefined label '{}'", p.sym);
@@ -725,7 +734,7 @@ impl State {
         }
         self.locals.clear();
 
-        let ps = std::mem::take(&mut self.filepatches);
+        let ps = mem::take(&mut self.filepatches);
         for p in ps {
             if !self.apply_patch(&p) {
                 self.globalpatches.push(p);
@@ -737,14 +746,16 @@ impl State {
     }
 
     pub fn output(&mut self, file: String, emitsyms: bool) {
-        let ps = std::mem::take(&mut self.globalpatches);
+        self.align(4);
+
+        let ps = mem::take(&mut self.globalpatches);
         for p in ps {
             if !self.apply_patch(&p) {
                 error!(p, "undefined label '{}'", p.sym);
             }
         }
 
-        std::fs::write(&file, &self.code).unwrap();
+        fs::write(&file, &self.code).unwrap();
 
         if emitsyms {
             let mut f = File::create(format!("{}.syms", file)).unwrap();
