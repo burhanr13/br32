@@ -6,7 +6,6 @@
     <Device name="GW2A-18C" pn="GW2A-LV18PG256C8/I7">gw2a18c-011</Device>
     <FileList>
         <File path="rtl/alu.sv" type="file.verilog" enable="1"/>
-        <File path="rtl/alu_pkg.sv" type="file.verilog" enable="1"/>
         <File path="rtl/arbiter.sv" type="file.verilog" enable="1"/>
         <File path="rtl/core.sv" type="file.verilog" enable="1"/>
         <File path="rtl/decoder.sv" type="file.verilog" enable="1"/>
