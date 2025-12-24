@@ -1,8 +1,9 @@
 obj_dir
 *.bin
-asm/*.txt
-c/*.asm
-c/*.ir
+*.mem
+sw/asm/*.txt
+sw/c/*.s
+sw/c/*.ir
 tools/bin
 
 log*
